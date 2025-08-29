@@ -1,0 +1,6 @@
+Flask
+werkzeug
+python-docx
+pypdf
+google-generativeai
+python-pptx

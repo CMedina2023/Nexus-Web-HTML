@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus AI - Testing Workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --card-bg: #334155;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 0 3rem 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 3rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .brand-text h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .brand-text p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        /* Tools Grid */
+        .workspace-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .tool-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .tool-card:hover {
+            background: #3f4f63;
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .tool-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .tool-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .tool-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+        }
+
+        .tool-card.chat .tool-icon {
+            background: var(--accent);
+        }
+
+        .tool-card.story .tool-icon {
+            background: #8b5cf6;
+        }
+
+        .tool-card.test .tool-icon {
+            background: var(--warning);
+        }
+
+        .tool-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tool-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-available {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+        }
+
+        .status-maintenance {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .tool-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .tool-benefits {
+            margin-bottom: 1rem;
+        }
+
+        .benefits-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .benefit-tag {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .tool-card.story .benefit-tag {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+
+        .tool-card.test .benefit-tag {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .tool-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .tool-version {
+            font-family: 'Courier New', monospace;
+        }
+
+        .tool-action {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tool-action:hover {
+            color: var(--accent-hover);
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding-top: 2rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+
+        /* Subtle animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="brand">
+                <div class="logo">N</div>
+                <div class="brand-text">
+                    <h1>Nexus AI</h1>
+                    <p>Testing Workspace</p>
+                </div>
+            </div>
+            <div class="user-info">
+                <div class="status-indicator"></div>
+                <span>Online</span>
+            </div>
+        </header>
+
+        <main>
+            <h2 class="workspace-title">Herramientas disponibles</h2>
+
+            <div class="tools-grid">
+                <div class="tool-card chat fade-in" onclick="window.location.href='/chat'">
+                    <div class="tool-header">
+                        <div class="tool-info">
+                            <div class="tool-icon">💬</div>
+                            <h3 class="tool-title">Chat Assistant</h3>
+                        </div>
+                        <div class="tool-status status-available">Disponible</div>
+                    </div>
+                    <p class="tool-description">
+                        Consulta especializada para Jira, metodologías ágiles y mejores prácticas de testing.
+                        Accede a documentación técnica y guías de configuración.
+                    </p>
+                    <div class="tool-benefits">
+                        <div class="benefits-list">
+                            <span class="benefit-tag">Respuestas inmediatas</span>
+                            <span class="benefit-tag">Conocimiento especializado</span>
+                            <span class="benefit-tag">Disponible 24/7</span>
+                        </div>
+                    </div>
+                    <div class="tool-meta">
+                        <span class="tool-version">v1.2.0</span>
+                        <a href="/chat" class="tool-action">
+                            Abrir herramienta →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="tool-card story fade-in" onclick="window.location.href='/story-creator'">
+                    <div class="tool-header">
+                        <div class="tool-info">
+                            <div class="tool-icon">📋</div>
+                            <h3 class="tool-title">Story Creator</h3>
+                        </div>
+                        <div class="tool-status status-available">Disponible</div>
+                    </div>
+                    <p class="tool-description">
+                        Procesamiento de documentos de requisitos para generar historias de usuario estructuradas
+                        con criterios de aceptación y reglas de negocio.
+                    </p>
+                    <div class="tool-benefits">
+                        <div class="benefits-list">
+                            <span class="benefit-tag">Ahorra tiempo</span>
+                            <span class="benefit-tag">Formato estandarizado</span>
+                            <span class="benefit-tag">Análisis inteligente</span>
+                            <span class="benefit-tag">Exportación automática</span>
+                        </div>
+                    </div>
+                    <div class="tool-meta">
+                        <span class="tool-version">v2.1.0</span>
+                        <a href="/story-creator" class="tool-action">
+                            Abrir herramienta →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="tool-card test fade-in" onclick="window.location.href='/matrix-generator'">
+                    <div class="tool-header">
+                        <div class="tool-info">
+                            <div class="tool-icon">🤖</div>
+                            <h3 class="tool-title">Matrix Generator</h3>
+                        </div>
+                        <div class="tool-status status-available">Disponible</div>
+                    </div>
+                    <p class="tool-description">
+                        Genera matrices de pruebas de forma automática a partir de tus documentos.
+                    </p>
+                    <div class="tool-benefits">
+                        <div class="benefits-list">
+                            <span class="benefit-tag">Casos automatizados</span>
+                            <span class="benefit-tag">Reducción de errores</span>
+                            <span class="benefit-tag">Mayor Cobertura</span>
+                            <span class="benefit-tag">Formato Estandarizado</span>
+                        </div>
+                    </div>
+                    <div class="tool-meta">
+                        <span class="tool-version">v1.0.0</span>
+                        <a href="/matrix-generator" class="tool-action">
+                            Abrir herramienta →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 Nexus AI Testing Workspace</p>
+        </footer>
+    </div>
+
+    <script>
+        // Animaciones simples para carga progresiva
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
+        // Navegación por teclado (accesibilidad)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const focusedElement = document.activeElement;
+                if (focusedElement.classList.contains('tool-card')) {
+                    focusedElement.click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

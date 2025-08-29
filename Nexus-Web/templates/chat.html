@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Assistant - Nexus AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --card-bg: #334155;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --success: #22c55e;
+            --user-msg: #3b82f6;
+            --ai-msg: #475569;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--secondary-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-button {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .back-button:hover {
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .chat-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Main Chat Container */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 2rem;
+        }
+
+        /* Chat History */
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--user-msg);
+            color: white;
+        }
+
+        .message.ai .message-avatar {
+            background: var(--ai-msg);
+            color: var(--text-primary);
+        }
+
+        .message-content {
+            max-width: 70%;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            line-height: 1.6;
+        }
+
+        .message.user .message-content {
+            background: var(--user-msg);
+            border-color: var(--user-msg);
+            color: white;
+        }
+
+        .message.ai .message-content {
+            background: var(--secondary-bg);
+            color: var(--text-primary);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Suggested Questions */
+        .suggestions-section {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .suggestions-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .suggestions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .suggestion-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .suggestion-item:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        /* Input Area */
+        .input-section {
+            background: var(--secondary-bg);
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .input-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+            font-family: inherit;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .send-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        /* Loading Animation */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .chat-container,
+            .input-container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .header {
+                padding: 1rem;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .suggestions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-container {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .send-btn {
+                align-self: flex-end;
+            }
+        }
+
+        /* Scrollbar Styling */
+        .chat-history::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-history::-webkit-scrollbar-track {
+            background: var(--primary-bg);
+        }
+
+        .chat-history::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .chat-history::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <a href="/" class="back-button">← Volver</a>
+            <h1 class="chat-title">Chat Assistant</h1>
+        </div>
+        <div class="header-actions">
+            <button id="clear-btn" class="action-btn">Limpiar chat</button>
+            <button id="export-btn" class="action-btn">Exportar</button>
+        </div>
+    </header>
+
+    <!-- Main Chat -->
+    <div class="chat-container">
+        <!-- Chat History -->
+        <div id="chat-history" class="chat-history">
+            <div class="message ai">
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                    <p>Hola, soy tu asistente especializado en pruebas de software y Jira. Estoy aquí para ayudarte con consultas técnicas, mejores prácticas y resolución de dudas sobre testing.</p>
+                    <div class="message-time" id="welcome-time"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Suggestions -->
+        <div class="suggestions-section" id="suggestions-section">
+            <div class="suggestions-title">Preguntas sugeridas:</div>
+            <div class="suggestions-grid" id="suggestions-grid">
+                <div class="suggestion-item" data-question="¿Cuál es la diferencia entre un Bug y una Incidencia?">
+                    Diferencia entre Bug e Incidencia
+                </div>
+                <div class="suggestion-item" data-question="¿Qué es Jira y para qué se usa en testing?">
+                    ¿Qué es Jira y cómo se usa?
+                </div>
+                <div class="suggestion-item" data-question="¿Qué es ISTQB y por qué es importante?">
+                    Certificación ISTQB
+                </div>
+                <div class="suggestion-item" data-question="¿Qué tipos de pruebas existen en testing?">
+                    Tipos de pruebas de software
+                </div>
+                <div class="suggestion-item" data-question="¿Cómo escribir un buen caso de prueba?">
+                    Casos de prueba efectivos
+                </div>
+                <div class="suggestion-item" data-question="¿Qué es el testing automatizado?">
+                    Testing automatizado
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Section -->
+    <div class="input-section">
+        <div class="input-container">
+            <textarea
+                id="user-input"
+                class="input-field"
+                placeholder="Escribe tu pregunta sobre testing, Jira o metodologías ágiles..."
+                rows="1"
+            ></textarea>
+            <button id="send-btn" class="send-btn">
+                <span>Enviar</span>
+                <span>→</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        class ChatAssistant {
+            constructor() {
+                this.chatHistory = document.getElementById('chat-history');
+                this.userInput = document.getElementById('user-input');
+                this.sendBtn = document.getElementById('send-btn');
+                this.clearBtn = document.getElementById('clear-btn');
+                this.exportBtn = document.getElementById('export-btn');
+                this.suggestionsGrid = document.getElementById('suggestions-grid');
+
+                this.conversationTopics = new Set();
+                this.questionHistory = [];
+
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.updateWelcomeTime();
+                this.autoResizeTextarea();
+            }
+
+            setupEventListeners() {
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.clearBtn.addEventListener('click', () => this.clearChat());
+                this.exportBtn.addEventListener('click', () => this.exportChat());
+
+                this.userInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                this.userInput.addEventListener('input', () => this.autoResizeTextarea());
+
+                // Event delegation for suggestion items
+                this.suggestionsGrid.addEventListener('click', (e) => {
+                    const suggestionItem = e.target.closest('.suggestion-item');
+                    if (suggestionItem) {
+                        const question = suggestionItem.dataset.question;
+                        this.userInput.value = question;
+                        this.sendMessage();
+                    }
+                });
+            }
+
+            updateWelcomeTime() {
+                const welcomeTime = document.getElementById('welcome-time');
+                welcomeTime.textContent = new Date().toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            autoResizeTextarea() {
+                this.userInput.style.height = 'auto';
+                this.userInput.style.height = Math.min(this.userInput.scrollHeight, 150) + 'px';
+            }
+
+            async sendMessage() {
+                const question = this.userInput.value.trim();
+                if (!question || this.sendBtn.disabled) return;
+
+                // Add question to history for suggestions update
+                this.questionHistory.push(question);
+                this.extractTopics(question);
+
+                // Create user message
+                this.addMessage(question, 'user');
+                this.userInput.value = '';
+                this.autoResizeTextarea();
+
+                // Disable input and show loading
+                this.setInputState(true);
+                const loadingMessage = this.addMessage('', 'ai', true);
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ pregunta: question }),
+                    });
+
+                    const data = await response.json();
+
+                    // Update loading message with response
+                    this.updateMessage(loadingMessage, data.respuesta);
+
+                    // Update suggestions based on conversation
+                    this.updateSuggestions();
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.updateMessage(loadingMessage, 'Error: No se pudo conectar con el servidor. Por favor, intenta nuevamente.');
+                } finally {
+                    this.setInputState(false);
+                }
+            }
+
+            addMessage(content, type, isLoading = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = type === 'user' ? 'U' : 'AI';
+
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+
+                if (isLoading) {
+                    messageContent.innerHTML = `
+                        <div class="typing-indicator">
+                            <span>Procesando</span>
+                            <div class="typing-dots">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const paragraph = document.createElement('p');
+                    paragraph.textContent = content;
+                    messageContent.appendChild(paragraph);
+
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'message-time';
+                    timeDiv.textContent = new Date().toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    messageContent.appendChild(timeDiv);
+                }
+
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(messageContent);
+                this.chatHistory.appendChild(messageDiv);
+                this.scrollToBottom();
+
+                return messageDiv;
+            }
+
+            updateMessage(messageElement, content) {
+                const messageContent = messageElement.querySelector('.message-content');
+                messageContent.innerHTML = '';
+
+                const paragraph = document.createElement('p');
+                paragraph.textContent = content;
+                messageContent.appendChild(paragraph);
+
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = new Date().toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                messageContent.appendChild(timeDiv);
+            }
+
+            setInputState(disabled) {
+                this.userInput.disabled = disabled;
+                this.sendBtn.disabled = disabled;
+
+                if (!disabled) {
+                    this.userInput.focus();
+                }
+            }
+
+            scrollToBottom() {
+                this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+            }
+
+            extractTopics(question) {
+                const keywords = question.toLowerCase();
+
+                if (keywords.includes('jira') || keywords.includes('ticket') || keywords.includes('issue')) {
+                    this.conversationTopics.add('jira');
+                }
+                if (keywords.includes('test') || keywords.includes('prueba') || keywords.includes('caso')) {
+                    this.conversationTopics.add('testing');
+                }
+                if (keywords.includes('bug') || keywords.includes('error') || keywords.includes('incidencia')) {
+                    this.conversationTopics.add('bugs');
+                }
+                if (keywords.includes('istqb') || keywords.includes('certificación')) {
+                    this.conversationTopics.add('certification');
+                }
+                if (keywords.includes('automatización') || keywords.includes('automatizado')) {
+                    this.conversationTopics.add('automation');
+                }
+                if (keywords.includes('agile') || keywords.includes('ágil') || keywords.includes('scrum')) {
+                    this.conversationTopics.add('agile');
+                }
+            }
+
+            updateSuggestions() {
+                const baseSuggestions = [
+                    { question: "¿Cuál es la diferencia entre un Bug y una Incidencia?", text: "Diferencia entre Bug e Incidencia", topics: ['bugs'] },
+                    { question: "¿Qué es Jira y para qué se usa en testing?", text: "¿Qué es Jira y cómo se usa?", topics: ['jira'] },
+                    { question: "¿Qué es ISTQB y por qué es importante?", text: "Certificación ISTQB", topics: ['certification'] },
+                    { question: "¿Qué tipos de pruebas existen en testing?", text: "Tipos de pruebas de software", topics: ['testing'] },
+                    { question: "¿Cómo escribir un buen caso de prueba?", text: "Casos de prueba efectivos", topics: ['testing'] },
+                    { question: "¿Qué es el testing automatizado?", text: "Testing automatizado", topics: ['automation'] },
+                    { question: "¿Cómo configurar un workflow en Jira?", text: "Configurar workflows en Jira", topics: ['jira'] },
+                    { question: "¿Cuáles son las mejores prácticas en testing ágil?", text: "Testing ágil - mejores prácticas", topics: ['agile', 'testing'] },
+                    { question: "¿Cómo priorizar bugs en un proyecto?", text: "Priorización de bugs", topics: ['bugs'] },
+                    { question: "¿Qué herramientas de automatización recomiendas?", text: "Herramientas de automatización", topics: ['automation'] }
+                ];
+
+                // Filter suggestions based on conversation topics
+                let relevantSuggestions = baseSuggestions.filter(suggestion => {
+                    return !this.questionHistory.some(asked =>
+                        asked.toLowerCase().includes(suggestion.question.toLowerCase().substring(0, 20))
+                    );
+                });
+
+                // Prioritize suggestions based on current conversation topics
+                if (this.conversationTopics.size > 0) {
+                    relevantSuggestions.sort((a, b) => {
+                        const aMatches = a.topics.filter(topic => this.conversationTopics.has(topic)).length;
+                        const bMatches = b.topics.filter(topic => this.conversationTopics.has(topic)).length;
+                        return bMatches - aMatches;
+                    });
+                }
+
+                // Take the top 6 suggestions
+                const suggestionsToShow = relevantSuggestions.slice(0, 6);
+
+                // Update the suggestions grid
+                this.suggestionsGrid.innerHTML = suggestionsToShow.map(suggestion =>
+                    `<div class="suggestion-item" data-question="${suggestion.question}">
+                        ${suggestion.text}
+                    </div>`
+                ).join('');
+            }
+
+            clearChat() {
+                this.chatHistory.innerHTML = `
+                    <div class="message ai">
+                        <div class="message-avatar">AI</div>
+                        <div class="message-content">
+                            <p>Hola, soy tu asistente especializado en pruebas de software y Jira. Estoy aquí para ayudarte con consultas técnicas, mejores prácticas y resolución de dudas sobre testing.</p>
+                            <div class="message-time">${new Date().toLocaleTimeString('es-ES', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</div>
+                        </div>
+                    </div>
+                `;
+
+                // Reset conversation data
+                this.conversationTopics.clear();
+                this.questionHistory = [];
+                this.updateSuggestions();
+            }
+
+            exportChat() {
+                const messages = Array.from(this.chatHistory.querySelectorAll('.message')).map(msg => {
+                    const type = msg.classList.contains('user') ? 'Usuario' : 'Asistente';
+                    const content = msg.querySelector('.message-content p')?.textContent || '';
+                    const time = msg.querySelector('.message-time')?.textContent || '';
+                    return `[${time}] ${type}: ${content}`;
+                }).join('\n\n');
+
+                const blob = new Blob([messages], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `chat-nexus-ai-${new Date().toISOString().split('T')[0]}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        // Initialize chat when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatAssistant();
+        });
+    </script>
+</body>
+</html>

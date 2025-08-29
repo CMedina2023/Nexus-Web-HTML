@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Generator - Nexus AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --card-bg: #334155;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 0 3rem 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-button {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .back-button:hover {
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tool-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+        }
+
+        /* Form Section */
+        .form-section {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* File Upload Area */
+        .file-upload-container {
+            position: relative;
+        }
+
+        .file-upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            background: var(--card-bg);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .file-upload-area:hover,
+        .file-upload-area.dragover {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .file-upload-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        .file-upload-text {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .file-upload-hint {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-info-item {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .file-info-item + .file-info-item {
+            margin-top: 0.5rem;
+        }
+
+        /* Action Buttons */
+        .actions-section {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .action-btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Progress Section */
+        .progress-section {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .progress-section.show {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--card-bg);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .progress-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        /* Results Section */
+        .results-section {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .results-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .results-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .results-text {
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .actions-section {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Scrollbar Styling */
+        .results-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .results-content::-webkit-scrollbar-track {
+            background: var(--primary-bg);
+        }
+
+        .results-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="back-button">← Volver</a>
+                <h1 class="page-title">Matrix Generator</h1>
+            </div>
+            <div class="tool-status">Disponible</div>
+        </header>
+
+        <section class="form-section">
+            <h2 class="section-title">Configuración del documento</h2>
+
+            <form id="matrix-form">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label class="form-label">Documento de requerimientos</label>
+                        <div class="file-upload-container">
+                            <div class="file-upload-area" id="file-upload-area">
+                                <div class="file-upload-icon">📄</div>
+                                <div class="file-upload-text">Haz clic para seleccionar o arrastra tu archivo aquí</div>
+                                <div class="file-upload-hint">Formatos soportados: PDF, DOCX • Tamaño máximo: 50MB</div>
+                                <input type="file" id="file-upload" name="file" accept=".docx,.pdf" required class="file-input">
+                            </div>
+                            <div class="file-info" id="file-info">
+                                <div class="file-info-item">
+                                    <span>Archivo:</span>
+                                    <span id="file-name">-</span>
+                                </div>
+                                <div class="file-info-item">
+                                    <span>Tamaño:</span>
+                                    <span id="file-size">-</span>
+                                </div>
+                                <div class="file-info-item">
+                                    <span>Tipo:</span>
+                                    <span id="file-type">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="output-filename">Nombre del archivo de salida (.zip)</label>
+                        <input type="text" id="output-filename" name="output_filename" class="form-input"
+                               placeholder="Ej. matriz_de_pruebas_login" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="contexto-input">Contexto del sistema</label>
+                        <textarea id="contexto-input" name="contexto" rows="4" class="form-textarea"
+                                  placeholder="Describe brevemente el sistema, como 'Sistema de gestión de usuarios en un portal web'"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="flujo-input">Flujo a considerar</label>
+                        <textarea id="flujo-input" name="flujo" rows="4" class="form-textarea"
+                                  placeholder="Describe el flujo específico, como 'El usuario inicia sesión, ingresa sus credenciales y navega al panel principal'"></textarea>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="actions-section">
+            <button type="button" id="preview-btn" class="action-btn btn-secondary">
+                <span>👁️</span>
+                <span>Vista Previa</span>
+            </button>
+            <button type="submit" form="matrix-form" id="generate-btn" class="action-btn btn-primary">
+                <span>⬇</span>
+                <span>Generar y Descargar</span>
+            </button>
+        </section>
+
+        <section class="progress-section" id="progress-section">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-text" id="progress-text">Procesando documento...</div>
+        </section>
+
+        <section class="results-section" id="results-section">
+            <div class="results-header">
+                <h2 class="results-title">Resultados</h2>
+            </div>
+
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number" id="total-cases">0</span>
+                    <div class="stat-label">Casos de Prueba</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="document-size">0</span>
+                    <div class="stat-label">Caracteres Procesados</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="processing-time">0s</span>
+                    <div class="stat-label">Tiempo de Procesamiento</div>
+                </div>
+            </div>
+
+            <div class="results-content">
+                <div class="results-text" id="results-text">Los resultados se mostrarán aquí...</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        class MatrixGenerator {
+            constructor() {
+                this.fileUploadArea = document.getElementById('file-upload-area');
+                this.fileInput = document.getElementById('file-upload');
+                this.fileInfo = document.getElementById('file-info');
+                this.previewBtn = document.getElementById('preview-btn');
+                this.generateBtn = document.getElementById('generate-btn');
+                this.progressSection = document.getElementById('progress-section');
+                this.resultsSection = document.getElementById('results-section');
+
+                this.startTime = null;
+
+                this.init();
+            }
+
+            init() {
+                this.setupFileUpload();
+                this.setupEventListeners();
+            }
+
+            setupFileUpload() {
+                // File input change event
+                this.fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.displayFileInfo(e.target.files[0]);
+                    }
+                });
+
+                // Drag and drop events
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    this.fileUploadArea.addEventListener(eventName, this.preventDefaults, false);
+                });
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    this.fileUploadArea.addEventListener(eventName, () => {
+                        this.fileUploadArea.classList.add('dragover');
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    this.fileUploadArea.addEventListener(eventName, () => {
+                        this.fileUploadArea.classList.remove('dragover');
+                    }, false);
+                });
+
+                this.fileUploadArea.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.fileInput.files = files;
+                        this.displayFileInfo(files[0]);
+                    }
+                }, false);
+
+                // Click to select file
+                this.fileUploadArea.addEventListener('click', () => {
+                    this.fileInput.click();
+                });
+            }
+
+            setupEventListeners() {
+                this.previewBtn.addEventListener('click', () => this.previewMatrix());
+
+                document.getElementById('matrix-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.generateMatrix();
+                });
+            }
+
+            preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            displayFileInfo(file) {
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('file-size').textContent = this.formatFileSize(file.size);
+                document.getElementById('file-type').textContent = file.type || 'Desconocido';
+                this.fileInfo.classList.add('show');
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            showProgress(message = 'Procesando documento...') {
+                this.startTime = Date.now();
+                this.progressSection.classList.add('show');
+                this.resultsSection.classList.remove('show');
+                document.getElementById('progress-text').textContent = message;
+
+                // Simulate progress
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 20;
+                    if (progress > 90) progress = 90;
+                    document.getElementById('progress-fill').style.width = progress + '%';
+                }, 500);
+
+                return interval;
+            }
+
+            hideProgress(interval) {
+                if (interval) clearInterval(interval);
+                document.getElementById('progress-fill').style.width = '100%';
+                setTimeout(() => {
+                    this.progressSection.classList.remove('show');
+                }, 300);
+            }
+
+            showResults(content, stats = null) {
+                this.resultsSection.classList.add('show');
+                document.getElementById('results-text').textContent = content;
+
+                if (stats) {
+                    document.getElementById('total-cases').textContent = stats.totalCases || 0;
+                    document.getElementById('document-size').textContent = this.formatNumber(stats.documentSize || 0);
+
+                    if (this.startTime) {
+                        const processingTime = Math.round((Date.now() - this.startTime) / 1000);
+                        document.getElementById('processing-time').textContent = processingTime + 's';
+                    }
+                }
+            }
+
+            showError(message) {
+                this.showResults(`Error: ${message}`);
+                document.getElementById('stats-grid').style.display = 'none';
+            }
+
+            formatNumber(num) {
+                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+            setButtonsState(disabled) {
+                this.previewBtn.disabled = disabled;
+                this.generateBtn.disabled = disabled;
+            }
+
+            async previewMatrix() {
+                if (!this.fileInput.files.length) {
+                    this.showError('Por favor selecciona un archivo primero');
+                    return;
+                }
+
+                const formData = new FormData(document.getElementById('matrix-form'));
+                this.setButtonsState(true);
+                const progressInterval = this.showProgress('Generando vista previa...');
+
+                try {
+                    const response = await fetch('/api/matrix/preview', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.status === 'success') {
+                        const previewContent = `Vista previa de la matriz de pruebas generada
+
+Contexto: ${formData.get('contexto') || 'No especificado'}
+Flujo: ${formData.get('flujo') || 'No especificado'}
+
+Casos de prueba identificados:
+${data.test_cases.map((testCase, index) =>
+    `${index + 1}. ${testCase.title}
+   Descripción: ${testCase.description}
+   Tipo: ${testCase.type}
+   Prioridad: ${testCase.priority}
+
+   Pasos:
+${testCase.steps.map((step, stepIndex) => `   ${stepIndex + 1}. ${step}`).join('\n')}
+
+   Resultado esperado: ${testCase.expected_result}
+`).join('\n' + '='.repeat(80) + '\n')}
+
+Resumen:
+✓ Total de casos de prueba: ${data.total_cases}
+✓ Contexto analizado: ${formData.get('contexto') ? 'Sí' : 'No'}
+✓ Flujo especificado: ${formData.get('flujo') ? 'Sí' : 'No'}`;
+
+                        this.showResults(previewContent, {
+                            totalCases: data.total_cases,
+                            documentSize: data.test_cases.reduce((acc, tc) => acc + tc.description.length, 0)
+                        });
+                    } else {
+                        this.showError(data.error || 'Error al generar la vista previa');
+                    }
+
+                } catch (error) {
+                    this.showError(`Error de conexión: ${error.message}`);
+                } finally {
+                    this.hideProgress(progressInterval);
+                    this.setButtonsState(false);
+                }
+            }
+
+            async generateMatrix() {
+                if (!this.fileInput.files.length) {
+                    this.showError('Por favor selecciona un archivo primero');
+                    return;
+                }
+
+                const formData = new FormData(document.getElementById('matrix-form'));
+                this.setButtonsState(true);
+                const progressInterval = this.showProgress('Generando matriz y preparando descarga...');
+
+                try {
+                    const response = await fetch('/api/matrix', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = formData.get('output_filename') + '.zip';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+
+                        this.showResults(`Descarga completada exitosamente
+
+Archivo generado: ${formData.get('output_filename')}.zip
+Contexto: ${formData.get('contexto') || 'No especificado'}
+Flujo: ${formData.get('flujo') || 'No especificado'}
+
+El archivo ZIP ha sido descargado automáticamente y contiene:
+
+• Matriz de pruebas en formato Excel (.xlsx)
+• Casos de prueba detallados
+• Documentación del contexto y flujo
+• Plantillas adicionales para ejecución
+
+La matriz está lista para usar en tu proyecto de testing.`);
+
+                    } else {
+                        const data = await response.json();
+                        this.showError(data.error || 'Error desconocido en la generación');
+                    }
+
+                } catch (error) {
+                    this.showError(`Error de conexión: ${error.message}`);
+                } finally {
+                    this.hideProgress(progressInterval);
+                    this.setButtonsState(false);
+                }
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new MatrixGenerator();
+        });
+    </script>
+</body>
+</html>

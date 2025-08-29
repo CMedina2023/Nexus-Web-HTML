@@ -336,7 +336,7 @@ def generate_story_from_chunk(chunk, role, story_type):
     Versión mejorada con prompts avanzados.
     """
     try:
-        api_key = "AIzaSyCrNYH7OtSt7c9uxkSJ9LE1s0YnFSE-e9U"
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             return {"status": "error", "message": "API Key no configurada."}
 
@@ -407,5 +407,6 @@ def generate_story_from_text(text, role, story_type):
             stories.append(result['story'])
         else:
             return result  # Retorna el error
+
 
     return {"status": "success", "stories": stories}

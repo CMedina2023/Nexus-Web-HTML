@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus AI - Testing Workspace</title>
+    <title>Nexus AI - A smart hub for your test</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -15,18 +15,21 @@
         }
 
         :root {
-            --primary-bg: #0f172a;
-            --secondary-bg: #1e293b;
-            --card-bg: #334155;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --text-muted: #94a3b8;
-            --border: #475569;
-            --success: #22c55e;
+            --primary-bg: #0a0b1a;
+            --secondary-bg: #1a1b2e;
+            --card-bg: #16213e;
+            --accent: #4c6ef5;
+            --accent-hover: #364fc7;
+            --text-primary: #ffffff;
+            --text-secondary: #a5b4fc;
+            --text-muted: #6b7280;
+            --border: #374151;
+            --success: #10b981;
             --warning: #f59e0b;
-            --error: #ef4444;
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-tertiary: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-quaternary: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
         }
 
         body {
@@ -34,7 +37,38 @@
             background: var(--primary-bg);
             color: var(--text-primary);
             line-height: 1.6;
+            overflow-x: hidden;
             min-height: 100vh;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 80%, #4c6ef5 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, #364fc7 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, #667eea 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
         }
 
         .container {
@@ -48,9 +82,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1.5rem 0 3rem 0;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 3rem;
+            padding: 2rem 0 3rem 0;
+            position: relative;
         }
 
         .brand {
@@ -60,28 +93,47 @@
         }
 
         .logo {
-            width: 40px;
-            height: 40px;
-            background: var(--accent);
-            border-radius: 8px;
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-primary);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 28px;
             font-weight: 700;
             color: white;
+            animation: pulse 3s ease-in-out infinite;
+            position: relative;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         .brand-text h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2, #4c6ef5);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 3s ease infinite;
             margin-bottom: 0.25rem;
         }
 
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         .brand-text p {
-            font-size: 0.9rem;
-            color: var(--text-muted);
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
         }
 
         .user-info {
@@ -90,6 +142,10 @@
             gap: 1rem;
             color: var(--text-secondary);
             font-size: 0.9rem;
+            background: rgba(76, 110, 245, 0.1);
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            border: 1px solid rgba(76, 110, 245, 0.2);
         }
 
         .status-indicator {
@@ -97,168 +153,344 @@
             height: 8px;
             background: var(--success);
             border-radius: 50%;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Workspace Section */
+        .workspace-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .workspace-subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 3rem;
         }
 
         /* Tools Grid */
-        .workspace-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 1.5rem;
-        }
-
         .tools-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 1.5rem;
+            gap: 2rem;
             margin-bottom: 3rem;
         }
 
         .tool-card {
             background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .tool-card.chat::before {
+            background: var(--gradient-primary);
+        }
+
+        .tool-card.story::before {
+            background: var(--gradient-secondary);
+        }
+
+        .tool-card.test::before {
+            background: var(--gradient-tertiary);
+        }
+
+        .tool-card:hover::before {
+            transform: scaleX(1);
         }
 
         .tool-card:hover {
-            background: #3f4f63;
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(76, 110, 245, 0.15);
             border-color: var(--accent);
-            transform: translateY(-2px);
+        }
+
+        .tool-card.chat {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .tool-card.story {
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%);
+        }
+
+        .tool-card.test {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);
         }
 
         .tool-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .tool-info {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
         }
 
         .tool-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 24px;
             color: white;
+            position: relative;
         }
 
         .tool-card.chat .tool-icon {
-            background: var(--accent);
+            background: var(--gradient-primary);
         }
 
         .tool-card.story .tool-icon {
-            background: #8b5cf6;
+            background: var(--gradient-secondary);
         }
 
         .tool-card.test .tool-icon {
-            background: var(--warning);
+            background: var(--gradient-tertiary);
         }
 
         .tool-title {
-            font-size: 1.1rem;
+            font-size: 1.5rem;
             font-weight: 600;
             color: var(--text-primary);
         }
 
         .tool-status {
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 500;
         }
 
         .status-available {
-            background: rgba(34, 197, 94, 0.15);
+            background: rgba(16, 185, 129, 0.2);
             color: var(--success);
         }
 
         .status-maintenance {
-            background: rgba(245, 158, 11, 0.15);
+            background: rgba(245, 158, 11, 0.2);
             color: var(--warning);
         }
 
         .tool-description {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            line-height: 1.5;
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
         }
 
         .tool-benefits {
-            margin-bottom: 1rem;
+            margin-bottom: 2rem;
+            flex-grow: 1;
         }
 
         .benefits-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 0.75rem;
         }
 
         .benefit-tag {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--accent);
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
             font-weight: 500;
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            border: 1px solid;
+            transition: all 0.2s ease;
+        }
+
+        .tool-card.chat .benefit-tag {
+            background: rgba(102, 126, 234, 0.15);
+            color: #667eea;
+            border-color: rgba(102, 126, 234, 0.3);
         }
 
         .tool-card.story .benefit-tag {
-            background: rgba(139, 92, 246, 0.1);
-            color: #8b5cf6;
-            border-color: rgba(139, 92, 246, 0.2);
+            background: rgba(240, 147, 251, 0.15);
+            color: #f093fb;
+            border-color: rgba(240, 147, 251, 0.3);
         }
 
         .tool-card.test .benefit-tag {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning);
-            border-color: rgba(245, 158, 11, 0.2);
+            background: rgba(79, 172, 254, 0.15);
+            color: #4facfe;
+            border-color: rgba(79, 172, 254, 0.3);
+        }
+
+        .benefit-tag:hover {
+            transform: scale(1.05);
         }
 
         .tool-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.8rem;
-            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: auto;
+            padding-top: 1rem;
         }
 
         .tool-version {
             font-family: 'Courier New', monospace;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
         }
 
         .tool-action {
-            color: var(--accent);
+            color: var(--text-primary);
             text-decoration: none;
             font-weight: 500;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            background: var(--accent);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
         }
 
         .tool-action:hover {
-            color: var(--accent-hover);
+            background: var(--accent-hover);
+            transform: translateX(4px);
+        }
+
+        /* Benefits Section */
+        .benefits-section {
+            margin: 4rem 0;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .benefit-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .benefit-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #8b5cf6, #ec4899);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .benefit-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 32px rgba(76, 110, 245, 0.12);
+        }
+
+        .benefit-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .benefit-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .benefit-card:nth-child(2) .benefit-icon {
+            background: var(--gradient-secondary);
+        }
+
+        .benefit-card:nth-child(3) .benefit-icon {
+            background: var(--gradient-tertiary);
+        }
+
+        .benefit-card:nth-child(4) .benefit-icon {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .benefit-card:nth-child(5) .benefit-icon {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .benefit-card:nth-child(6) .benefit-icon {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        }
+
+        .benefit-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .benefit-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
 
         /* Footer */
         .footer {
-            border-top: 1px solid var(--border);
-            padding-top: 2rem;
-            font-size: 0.8rem;
-            color: var(--text-muted);
             text-align: center;
+            padding: 3rem 0;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
         }
 
         /* Responsive Design */
@@ -269,25 +501,63 @@
 
             .tools-grid {
                 grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .tool-card {
+                padding: 1.5rem;
             }
 
             .header {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 1rem;
+                gap: 1.5rem;
+            }
+
+            .user-info {
+                align-self: center;
             }
         }
 
-        /* Subtle animations */
+        /* Animations */
         .fade-in {
-            animation: fadeIn 0.3s ease-out;
+            animation: fadeIn 0.8s ease-out;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(30px);
             }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Loading animation for cards */
+        .tool-card {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: cardSlideIn 0.6s ease-out forwards;
+        }
+
+        @keyframes cardSlideIn {
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -296,63 +566,72 @@
     </style>
 </head>
 <body>
+    <div class="bg-animation"></div>
+
     <div class="container">
-        <header class="header">
+        <header class="header fade-in">
             <div class="brand">
                 <div class="logo">N</div>
                 <div class="brand-text">
                     <h1>Nexus AI</h1>
-                    <p>Testing Workspace</p>
+                    <p>A smart hub for your test</p>
                 </div>
             </div>
             <div class="user-info">
                 <div class="status-indicator"></div>
-                <span>Online</span>
+                <span>Sistema Online</span>
             </div>
         </header>
 
         <main>
-            <h2 class="workspace-title">Herramientas disponibles</h2>
+            <h2 class="workspace-title fade-in">Herramientas Disponibles</h2>
+            <p class="workspace-subtitle fade-in">Potencia tu flujo trabajo con estas herramientas</p>
 
             <div class="tools-grid">
-                <div class="tool-card chat fade-in" onclick="window.location.href='/chat'">
+                <div class="tool-card chat slide-in" onclick="window.location.href='/chat'">
                     <div class="tool-header">
                         <div class="tool-info">
                             <div class="tool-icon">💬</div>
-                            <h3 class="tool-title">Chat Assistant</h3>
+                            <div>
+                                <h3 class="tool-title">Chat Assistant</h3>
+                            </div>
                         </div>
                         <div class="tool-status status-available">Disponible</div>
                     </div>
                     <p class="tool-description">
                         Consulta especializada para Jira, metodologías ágiles y mejores prácticas de testing.
-                        Accede a documentación técnica y guías de configuración.
+                        Accede a documentación técnica y guías de configuración con respuestas contextualizadas.
                     </p>
                     <div class="tool-benefits">
                         <div class="benefits-list">
                             <span class="benefit-tag">Respuestas inmediatas</span>
                             <span class="benefit-tag">Conocimiento especializado</span>
                             <span class="benefit-tag">Disponible 24/7</span>
+                            <span class="benefit-tag">Soporte Jira</span>
                         </div>
                     </div>
                     <div class="tool-meta">
                         <span class="tool-version">v1.2.0</span>
                         <a href="/chat" class="tool-action">
-                            Abrir herramienta →
+                            Abrir Chat
+                            <span>→</span>
                         </a>
                     </div>
                 </div>
 
-                <div class="tool-card story fade-in" onclick="window.location.href='/story-creator'">
+                <div class="tool-card story slide-in" onclick="window.location.href='/story-creator'">
                     <div class="tool-header">
                         <div class="tool-info">
                             <div class="tool-icon">📋</div>
-                            <h3 class="tool-title">Story Creator</h3>
+                            <div>
+                                <h3 class="tool-title">Story Creator</h3>
+                            </div>
                         </div>
                         <div class="tool-status status-available">Disponible</div>
                     </div>
                     <p class="tool-description">
-                        Procesamiento de documentos de requisitos para generar historias de usuario estructuradas
-                        con criterios de aceptación y reglas de negocio.
+                        Procesamiento inteligente de documentos de requisitos para generar historias de usuario estructuradas
+                        con criterios de aceptación automáticos y reglas de negocio detalladas.
                     </p>
                     <div class="tool-benefits">
                         <div class="benefits-list">
@@ -365,21 +644,25 @@
                     <div class="tool-meta">
                         <span class="tool-version">v2.1.0</span>
                         <a href="/story-creator" class="tool-action">
-                            Abrir herramienta →
+                            Crear Historias
+                            <span>→</span>
                         </a>
                     </div>
                 </div>
 
-                <div class="tool-card test fade-in" onclick="window.location.href='/matrix-generator'">
+                <div class="tool-card test slide-in" onclick="window.location.href='/matrix-generator'">
                     <div class="tool-header">
                         <div class="tool-info">
                             <div class="tool-icon">🤖</div>
-                            <h3 class="tool-title">Matrix Generator</h3>
+                            <div>
+                                <h3 class="tool-title">Matrix Generator</h3>
+                            </div>
                         </div>
                         <div class="tool-status status-available">Disponible</div>
                     </div>
                     <p class="tool-description">
-                        Genera matrices de pruebas de forma automática a partir de tus documentos.
+                        Genera matrices de pruebas completas de forma automática a partir de tus documentos de requisitos.
+                        Optimiza la cobertura de testing y reduce errores manuales significativamente.
                     </p>
                     <div class="tool-benefits">
                         <div class="benefits-list">
@@ -392,36 +675,143 @@
                     <div class="tool-meta">
                         <span class="tool-version">v1.0.0</span>
                         <a href="/matrix-generator" class="tool-action">
-                            Abrir herramienta →
+                            Generar Matriz
+                            <span>→</span>
                         </a>
                     </div>
                 </div>
             </div>
         </main>
 
-        <footer class="footer">
-            <p>&copy; 2024 Nexus AI Testing Workspace</p>
+        <!-- Benefits Section -->
+        <section class="benefits-section">
+            <div class="section-header fade-in">
+                <h2 class="workspace-title">Beneficios de usar Nexus AI</h2>
+                <p class="workspace-subtitle">Características que transforman y optimizan tu flujo de trabajo de testing</p>
+            </div>
+
+            <div class="benefits-grid">
+                <div class="benefit-card slide-in">
+                    <div class="benefit-header">
+                        <div class="benefit-icon">⚡</div>
+                        <h3 class="benefit-title">Mayor Velocidad</h3>
+                    </div>
+                    <p class="benefit-description">
+                        Reduce el tiempo de creación de historias de usuario y casos de prueba hasta en un 80% con procesamiento inteligente automatizado
+                    </p>
+                </div>
+
+                <div class="benefit-card slide-in">
+                    <div class="benefit-header">
+                        <div class="benefit-icon">🤖</div>
+                        <h3 class="benefit-title">Automatización Completa</h3>
+                    </div>
+                    <p class="benefit-description">
+                        Genera automáticamente criterios de aceptación, matrices de prueba y documentación técnica desde documentos de requisitos
+                    </p>
+                </div>
+
+                <div class="benefit-card slide-in">
+                    <div class="benefit-header">
+                        <div class="benefit-icon">🎯</div>
+                        <h3 class="benefit-title">Precisión Mejorada</h3>
+                    </div>
+                    <p class="benefit-description">
+                        Elimina errores humanos y asegura consistencia en formatos, nomenclatura y estructura de documentos
+                    </p>
+                </div>
+
+                <div class="benefit-card slide-in">
+                    <div class="benefit-header">
+                        <div class="benefit-icon">📊</div>
+                        <h3 class="benefit-title">Análisis Inteligente</h3>
+                    </div>
+                    <p class="benefit-description">
+                        Procesa documentos complejos identificando automáticamente funcionalidades, reglas de negocio y casos de uso
+                    </p>
+                </div>
+
+                <div class="benefit-card slide-in">
+                    <div class="benefit-header">
+                        <div class="benefit-icon">🔄</div>
+                        <h3 class="benefit-title">Flujo Optimizado</h3>
+                    </div>
+                    <p class="benefit-description">
+                        Integra perfectamente con metodologías ágiles y herramientas como Jira para un workflow sin interrupciones
+                    </p>
+                </div>
+
+                <div class="benefit-card slide-in">
+                    <div class="benefit-header">
+                        <div class="benefit-icon">💡</div>
+                        <h3 class="benefit-title">Conocimiento Especializado</h3>
+                    </div>
+                    <p class="benefit-description">
+                        Acceso 24/7 a mejores prácticas de testing, configuraciones de Jira y consultoría técnica especializada
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer fade-in">
+            <p>&copy; 2025 Nexus AI - A smart hub for your test - Desarrollado con IA para optimizar tu flujo de trabajo</p>
         </footer>
     </div>
 
     <script>
-        // Animaciones simples para carga progresiva
+        // Efecto de paralaje suave en el fondo
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const bg = document.querySelector('.bg-animation');
+            if (bg) {
+                bg.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+        });
+
+        // Animaciones progresivas al cargar
         document.addEventListener('DOMContentLoaded', () => {
-            const elements = document.querySelectorAll('.fade-in');
-            elements.forEach((element, index) => {
+            // Animaciones escalonadas para las tarjetas
+            const cards = document.querySelectorAll('.tool-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.2}s`;
+            });
+
+            // Animaciones para elementos fade-in
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach((element, index) => {
                 element.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Animaciones para elementos slide-in
+            const slideElements = document.querySelectorAll('.slide-in');
+            slideElements.forEach((element, index) => {
+                element.style.animationDelay = `${(index * 0.2) + 0.3}s`;
             });
         });
 
-        // Navegación por teclado (accesibilidad)
+        // Navegación por teclado (accesibilidad mejorada)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 const focusedElement = document.activeElement;
                 if (focusedElement.classList.contains('tool-card')) {
+                    e.preventDefault();
                     focusedElement.click();
                 }
             }
         });
+
+        // Efecto hover mejorado para las tarjetas
+        const toolCards = document.querySelectorAll('.tool-card');
+        toolCards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+            });
+        });
     </script>
 </body>
+</html>
 </html>

@@ -27,7 +27,7 @@ def consultar_gemini(pregunta, conocimiento_jira):
     Genera una respuesta utilizando la API de Gemini.
     """
     try:
-        api_key = "AIzaSyCrNYH7OtSt7c9uxkSJ9LE1s0YnFSE-e9U"
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             return "Error: La clave API de Gemini no está configurada. Contacta al administrador."
 
@@ -57,4 +57,5 @@ def consultar_gemini(pregunta, conocimiento_jira):
     except api_exceptions.BlockedPromptException as e:
         return f"Error de seguridad: La solicitud fue bloqueada. {e}"
     except Exception as e:
+
         return f"Error al comunicarse con la API de Gemini: {e}"

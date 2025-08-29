@@ -4,3 +4,4 @@ python-docx
 pypdf
 google-generativeai
 python-pptx
+gunicorn

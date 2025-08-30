@@ -850,9 +850,9 @@
                 const messageContent = messageElement.querySelector('.message-content');
                 messageContent.innerHTML = '';
 
-                const paragraph = document.createElement('p');
-                paragraph.textContent = content;
-                messageContent.appendChild(paragraph);
+                // Format the content for better readability
+                const formattedContent = this.formatMessageContent(content);
+                messageContent.innerHTML = formattedContent;
 
                 const timeDiv = document.createElement('div');
                 timeDiv.className = 'message-time';
@@ -861,6 +861,27 @@
                     minute: '2-digit'
                 });
                 messageContent.appendChild(timeDiv);
+            }
+
+            formatMessageContent(content) {
+                // Split content into paragraphs and format
+                let formatted = content
+                    // Split on double asterisks for sections
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                    // Add line breaks after periods followed by uppercase letters (new sentences)
+                    .replace(/\. ([A-ZÁÉÍÓÚÑ])/g, '.<br><br>$1')
+                    // Format numbered lists
+                    .replace(/(\d+\.\s)/g, '<br>$1')
+                    // Format bullet points with asterisks
+                    .replace(/^\s*\*\s/gm, '<br>• ')
+                    // Format bullet points with dashes
+                    .replace(/^\s*-\s/gm, '<br>• ')
+                    // Clean up multiple line breaks
+                    .replace(/<br>\s*<br>\s*<br>/g, '<br><br>')
+                    // Remove leading line breaks
+                    .replace(/^<br>/, '');
+
+                return `<div class="formatted-content">${formatted}</div>`;
             }
 
             setInputState(disabled) {

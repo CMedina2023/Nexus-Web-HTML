@@ -346,6 +346,83 @@
             padding-top: 0.75rem;
         }
 
+        /* Test Options Section */
+        .test-options-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .test-options-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-secondary);
+        }
+
+        .test-options-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .test-options-title::before {
+            content: '🧪';
+            font-size: 1.5rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--secondary-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-item:hover {
+            border-color: var(--accent);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent);
+        }
+
+        .checkbox-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .checkbox-description {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-left: 2.75rem;
+            margin-top: -0.5rem;
+        }
+
         /* Action Buttons */
         .actions-section {
             display: flex;
@@ -586,6 +663,10 @@
             background: var(--gradient-quaternary);
         }
 
+        .stat-card:nth-child(4)::before {
+            background: var(--gradient-secondary);
+        }
+
         .stat-number {
             font-size: 2rem;
             font-weight: 700;
@@ -603,6 +684,13 @@
 
         .stat-card:nth-child(3) .stat-number {
             background: var(--gradient-quaternary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card:nth-child(4) .stat-number {
+            background: var(--gradient-secondary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -813,6 +901,29 @@
             </form>
         </section>
 
+        <!-- Test Options Section -->
+        <section class="test-options-section">
+            <h2 class="test-options-title">Tipos de Pruebas</h2>
+
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="funcional-tests" name="test_types" value="funcional" checked>
+                    <label for="funcional-tests" class="checkbox-label">Pruebas Funcionales</label>
+                </div>
+                <div class="checkbox-description">
+                    Flujo principal, casos alternativos, validaciones, manejo de errores
+                </div>
+
+                <div class="checkbox-item">
+                    <input type="checkbox" id="no-funcional-tests" name="test_types" value="no_funcional" checked>
+                    <label for="no-funcional-tests" class="checkbox-label">Pruebas No Funcionales</label>
+                </div>
+                <div class="checkbox-description">
+                    Rendimiento, seguridad, usabilidad, compatibilidad, confiabilidad
+                </div>
+            </div>
+        </section>
+
         <section class="actions-section">
             <button type="button" id="preview-btn" class="action-btn btn-secondary">
                 <span>👁️</span>
@@ -842,8 +953,12 @@
                     <div class="stat-label">Casos de Prueba</div>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-number" id="document-size">0</span>
-                    <div class="stat-label">Caracteres Procesados</div>
+                    <span class="stat-number" id="funcional-cases">0</span>
+                    <div class="stat-label">Pruebas Funcionales</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="no-funcional-cases">0</span>
+                    <div class="stat-label">Pruebas No Funcionales</div>
                 </div>
                 <div class="stat-card">
                     <span class="stat-number" id="processing-time">0s</span>
@@ -955,6 +1070,11 @@
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
 
+            getSelectedTestTypes() {
+                const checkboxes = document.querySelectorAll('input[name="test_types"]:checked');
+                return Array.from(checkboxes).map(cb => cb.value);
+            }
+
             showProgress(message = 'Procesando documento...') {
                 this.startTime = Date.now();
                 this.progressSection.classList.add('show');
@@ -986,7 +1106,8 @@
 
                 if (stats) {
                     document.getElementById('total-cases').textContent = stats.totalCases || 0;
-                    document.getElementById('document-size').textContent = this.formatNumber(stats.documentSize || 0);
+                    document.getElementById('funcional-cases').textContent = stats.funcionalCases || 0;
+                    document.getElementById('no-funcional-cases').textContent = stats.noFuncionalCases || 0;
 
                     if (this.startTime) {
                         const processingTime = Math.round((Date.now() - this.startTime) / 1000);
@@ -1015,7 +1136,19 @@
                     return;
                 }
 
+                const selectedTypes = this.getSelectedTestTypes();
+                if (selectedTypes.length === 0) {
+                    this.showError('Por favor selecciona al menos un tipo de prueba');
+                    return;
+                }
+
                 const formData = new FormData(document.getElementById('matrix-form'));
+
+                // Agregar tipos de pruebas seleccionadas
+                selectedTypes.forEach(type => {
+                    formData.append('test_types', type);
+                });
+
                 this.setButtonsState(true);
                 const progressInterval = this.showProgress('Generando vista previa...');
 
@@ -1028,32 +1161,49 @@
                     const data = await response.json();
 
                     if (response.ok && data.status === 'success') {
+                        const funcionalCount = data.test_cases.filter(tc => tc.tipo?.toLowerCase() === 'funcional').length;
+                        const noFuncionalCount = data.test_cases.filter(tc => tc.tipo?.toLowerCase() === 'no funcional').length;
+
                         const previewContent = `Vista previa de la matriz de pruebas generada
 
-Contexto: ${formData.get('contexto') || 'No especificado'}
-Flujo: ${formData.get('flujo') || 'No especificado'}
+Configuración:
+• Contexto: ${formData.get('contexto') || 'No especificado'}
+• Flujo: ${formData.get('flujo') || 'No especificado'}
+• Tipos de prueba: ${selectedTypes.join(', ')}
 
-Casos de prueba identificados:
+${'='.repeat(80)}
+
+CASOS DE PRUEBA GENERADOS:
+
 ${data.test_cases.map((testCase, index) =>
-    `${index + 1}. ${testCase.title}
-   Descripción: ${testCase.description}
-   Tipo: ${testCase.type}
-   Prioridad: ${testCase.priority}
+    `${index + 1}. ${testCase.nombre || testCase.title || 'Sin nombre'}
+   Tipo: ${testCase.tipo || testCase.type || 'No especificado'}
+   Categoría: ${testCase.categoria || testCase.category || 'No especificada'}
+   Descripción: ${testCase.descripcion || testCase.description || 'Sin descripción'}
+   Prioridad: ${testCase.prioridad || testCase.priority || 'No especificada'}
 
-   Pasos:
-${testCase.steps.map((step, stepIndex) => `   ${stepIndex + 1}. ${step}`).join('\n')}
+   Pasos a seguir:
+${(testCase.pasos || testCase.steps || []).map((step, stepIndex) => `   ${stepIndex + 1}. ${step}`).join('\n')}
 
-   Resultado esperado: ${testCase.expected_result}
+   Resultado esperado: ${testCase.resultado_esperado || testCase.expected_result || 'No especificado'}
+
+   Criterios de aceptación: ${testCase.criterios_aceptacion || testCase.acceptance_criteria || 'No especificados'}
 `).join('\n' + '='.repeat(80) + '\n')}
 
-Resumen:
-✓ Total de casos de prueba: ${data.total_cases}
-✓ Contexto analizado: ${formData.get('contexto') ? 'Sí' : 'No'}
+${'='.repeat(80)}
+
+RESUMEN ESTADÍSTICO:
+✓ Total de casos de prueba: ${data.total_cases || data.test_cases.length}
+✓ Pruebas funcionales: ${funcionalCount}
+✓ Pruebas no funcionales: ${noFuncionalCount}
+✓ Tipos seleccionados: ${selectedTypes.join(', ')}
+✓ Contexto definido: ${formData.get('contexto') ? 'Sí' : 'No'}
 ✓ Flujo especificado: ${formData.get('flujo') ? 'Sí' : 'No'}`;
 
                         this.showResults(previewContent, {
-                            totalCases: data.total_cases,
-                            documentSize: data.test_cases.reduce((acc, tc) => acc + tc.description.length, 0)
+                            totalCases: data.total_cases || data.test_cases.length,
+                            funcionalCases: funcionalCount,
+                            noFuncionalCases: noFuncionalCount
                         });
                     } else {
                         this.showError(data.error || 'Error al generar la vista previa');
@@ -1073,7 +1223,19 @@ Resumen:
                     return;
                 }
 
+                const selectedTypes = this.getSelectedTestTypes();
+                if (selectedTypes.length === 0) {
+                    this.showError('Por favor selecciona al menos un tipo de prueba');
+                    return;
+                }
+
                 const formData = new FormData(document.getElementById('matrix-form'));
+
+                // Agregar tipos de pruebas seleccionadas
+                selectedTypes.forEach(type => {
+                    formData.append('test_types', type);
+                });
+
                 this.setButtonsState(true);
                 const progressInterval = this.showProgress('Generando matriz y preparando descarga...');
 
@@ -1095,20 +1257,25 @@ Resumen:
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
 
+                        const typesText = selectedTypes.includes('funcional') && selectedTypes.includes('no_funcional')
+                            ? 'funcionales y no funcionales'
+                            : selectedTypes.includes('funcional')
+                                ? 'funcionales'
+                                : 'no funcionales';
+
                         this.showResults(`Descarga completada exitosamente
 
 Archivo generado: ${formData.get('output_filename')}.zip
 Contexto: ${formData.get('contexto') || 'No especificado'}
 Flujo: ${formData.get('flujo') || 'No especificado'}
+Tipos de prueba: ${typesText}
 
 El archivo ZIP ha sido descargado automáticamente y contiene:
 
-• Matriz de pruebas en formato Excel (.xlsx)
-• Casos de prueba detallados
-• Documentación del contexto y flujo
-• Plantillas adicionales para ejecución
+• Matriz de pruebas en formato CSV con estructura homologada
+• Casos de prueba ${typesText} detallados
 
-La matriz está lista para usar en tu proyecto de testing.`);
+Lista para usar en tu proyecto de testing.`);
 
                     } else {
                         const data = await response.json();

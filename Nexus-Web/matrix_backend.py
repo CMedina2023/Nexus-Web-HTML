@@ -1,6 +1,5 @@
 import os
 import google.generativeai as genai
-# REMOVIDO: import google.api_core.exceptions as api_exceptions
 import docx
 from pypdf import PdfReader
 import csv
@@ -28,6 +27,28 @@ def extract_text_from_file(file_path):
     else:
         raise ValueError("Formato de archivo no soportado. Usa .docx o .pdf.")
 
+def split_document_into_chunks(text, max_chunk_size=4000):
+    """
+    Divide un texto largo en fragmentos más pequeños basados en la longitud,
+    intentando no cortar en medio de una frase.
+    """
+    chunks = []
+    current_chunk = ""
+    # Dividir el texto por frases
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) + 1 < max_chunk_size:
+            current_chunk += sentence + " "
+        else:
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            current_chunk = sentence + " "
+            
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+        
+    return chunks
 
 def generar_matriz_test(contexto, flujo, texto_documento, tipos_prueba=['funcional', 'no_funcional']):
     """
@@ -152,8 +173,14 @@ def generar_matriz_test(contexto, flujo, texto_documento, tipos_prueba=['funcion
             """
         else:
             return {"status": "success", "matrix": []}
-
-        prompt_contexto = f"""
+            
+        # NUEVA LÓGICA: Procesar el documento por chunks
+        chunks = split_document_into_chunks(texto_documento)
+        full_response_text = ""
+        
+        for i, chunk in enumerate(chunks):
+            # Construir el prompt para el fragmento actual
+            prompt_contexto = f"""
             Considera el siguiente contexto y flujo para generar la matriz de pruebas:
 
             Contexto del sistema:
@@ -162,39 +189,52 @@ def generar_matriz_test(contexto, flujo, texto_documento, tipos_prueba=['funcion
             Flujo de prueba a considerar:
             {flujo}
 
-            Texto del documento para generar los casos de prueba:
-            {texto_documento}
+            Fragmento {i+1} del documento (Total: {len(chunks)}):
+            {chunk}
 
             INSTRUCCIONES FINALES:
             - Responde SOLO con el array JSON, sin texto adicional
             - Cada caso debe ser único y aportar valor específico
             - Los pasos deben ser claros y ejecutables por cualquier tester
             - Los resultados esperados deben ser verificables y específicos
+            - La respuesta debe ser un JSON completo. Si hay más de un chunk, la respuesta final debe ser la unión de los JSONs de cada chunk.
             """
+            
+            prompt_completo = prompt_base + prompt_especifico + prompt_contexto
+            
+            response = model.generate_content(prompt_completo)
+            
+            # Acumular la respuesta de cada fragmento
+            full_response_text += response.text
 
-        prompt_completo = prompt_base + prompt_especifico + prompt_contexto
-
-        response = model.generate_content(prompt_completo)
-        respuesta_limpia = re.search(r'```json\n([\s\S]*)\n```', response.text)
-        if respuesta_limpia:
-            json_str = respuesta_limpia.group(1).strip()
-            matrix_data = json.loads(json_str)
-
+        # Procesar el resultado completo
+        # Combina los JSON de cada respuesta en un solo array
+        all_cases = []
+        json_matches = re.findall(r'```json\n([\s\S]*?)\n```', full_response_text)
+        
+        for json_str in json_matches:
+            try:
+                matrix_data_chunk = json.loads(json_str.strip())
+                if isinstance(matrix_data_chunk, list):
+                    all_cases.extend(matrix_data_chunk)
+            except json.JSONDecodeError as e:
+                # Log o manejar el error si un chunk no devolvió un JSON válido
+                print(f"Error decodificando JSON de un chunk: {e}")
+                
+        if all_cases:
             # Normalizar los datos para el conteo y guardado
-            for case in matrix_data:
-                # Normaliza la clave 'Tipo_de_prueba' a un formato consistente en minúsculas
-                tipo_key = "Tipo_de_prueba"  # Usa el nombre de clave del prompt
+            for case in all_cases:
+                tipo_key = "Tipo_de_prueba"
                 if tipo_key in case:
                     case[tipo_key] = case[tipo_key].lower()
 
-            return {"status": "success", "matrix": matrix_data}
+            return {"status": "success", "matrix": all_cases}
         else:
-            return {"status": "error", "message": "La IA no devolvió un JSON válido. Respuesta: " + response.text}
+            return {"status": "error", "message": "La IA no devolvió un JSON válido. Respuesta: " + full_response_text}
 
     except json.JSONDecodeError as e:
         return {"status": "error",
-                "message": f"Error de formato JSON en la respuesta de la IA: {e}. Respuesta: {response.text}"}
-    # CAMBIADO: Manejo genérico de excepciones en lugar de BlockedPromptException específica
+                "message": f"Error de formato JSON en la respuesta de la IA: {e}. Respuesta: {full_response_text}"}
     except Exception as e:
         error_message = str(e).lower()
         if "blocked" in error_message or "safety" in error_message:

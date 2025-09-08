@@ -2,8 +2,8 @@ Flask
 werkzeug
 python-docx
 pypdf
-google-generativeai
 python-pptx
 gunicorn
-google-api-core>=1.32.0
-google-cloud-aiplatform==1.35.0
+google-generativeai>=0.3.0
+google-api-core
+google-auth

@@ -1,6 +1,6 @@
 import os
 import google.generativeai as genai
-import google.api_core.exceptions as api_exceptions
+# REMOVIDO: import google.api_core.exceptions as api_exceptions
 import docx
 from pypdf import PdfReader
 import csv
@@ -194,10 +194,13 @@ def generar_matriz_test(contexto, flujo, texto_documento, tipos_prueba=['funcion
     except json.JSONDecodeError as e:
         return {"status": "error",
                 "message": f"Error de formato JSON en la respuesta de la IA: {e}. Respuesta: {response.text}"}
-    except api_exceptions.BlockedPromptException as e:
-        return {"status": "error", "message": f"Error de seguridad: La solicitud fue bloqueada. {e}"}
+    # CAMBIADO: Manejo genérico de excepciones en lugar de BlockedPromptException específica
     except Exception as e:
-        return {"status": "error", "message": f"Error al comunicarse con la API de Gemini: {e}"}
+        error_message = str(e).lower()
+        if "blocked" in error_message or "safety" in error_message:
+            return {"status": "error", "message": f"Error de seguridad: La solicitud fue bloqueada por filtros de seguridad."}
+        else:
+            return {"status": "error", "message": f"Error al comunicarse con la API de Gemini: {e}"}
 
 
 def save_to_csv_buffer(data):

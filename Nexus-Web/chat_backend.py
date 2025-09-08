@@ -1,6 +1,6 @@
 import os
 import google.generativeai as genai
-import google.api_core.exceptions as api_exceptions
+# REMOVIDO: import google.api_core.exceptions as api_exceptions
 from pptx import Presentation
 
 # Este es el nuevo punto de entrada de tu aplicación
@@ -8,17 +8,12 @@ def cargar_conocimiento(path):
     """
     Carga el texto de todas las formas de un archivo PowerPoint.
     """
-    # Construye la ruta absoluta al archivo
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(base_dir, 'PLAN de Capacitacion.pptx')
-
     texto = ""
     try:
-        # Ahora, el chequeo de existencia utiliza la nueva ruta absoluta
-        if not os.path.exists(file_path):
+        if not os.path.exists(path):
             return "❌ Archivo 'PLAN de Capacitacion.pptx' no encontrado."
 
-        prs = Presentation(file_path)
+        prs = Presentation(path)
         for slide in prs.slides:
             for shape in slide.shapes:
                 if hasattr(shape, "text"):
@@ -59,9 +54,10 @@ def consultar_gemini(pregunta, conocimiento_jira):
             ]
         )
         return response.text
-    except api_exceptions.BlockedPromptException as e:
-        return f"Error de seguridad: La solicitud fue bloqueada. {e}"
+    # CAMBIADO: Manejo genérico de excepciones en lugar de BlockedPromptException específica
     except Exception as e:
-
-        return f"Error al comunicarse con la API de Gemini: {e}"
-
+        error_message = str(e).lower()
+        if "blocked" in error_message or "safety" in error_message:
+            return f"Error de seguridad: La solicitud fue bloqueada por filtros de seguridad."
+        else:
+            return f"Error al comunicarse con la API de Gemini: {e}"

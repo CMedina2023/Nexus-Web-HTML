@@ -31,25 +31,26 @@ try:
     # Buscar el archivo en diferentes ubicaciones
     posibles_rutas = [
         "PLAN de Capacitacion.pptx",
-        "./PLAN de Capacitacion.pptx", 
+        "./PLAN de Capacitacion.pptx",
         os.path.join(os.getcwd(), "PLAN de Capacitacion.pptx")
     ]
-    
+
     ruta_encontrada = None
     for ruta in posibles_rutas:
         if os.path.exists(ruta):
             ruta_encontrada = ruta
             break
-    
+
     if ruta_encontrada:
         CONOCIMIENTO_JIRA = cargar_conocimiento(ruta_encontrada)
         logger.info(f"Conocimiento JIRA cargado desde: {ruta_encontrada}")
     else:
         logger.warning("No se encontró el archivo de conocimiento JIRA")
-        
+
 except Exception as e:
     logger.error(f"Error cargando conocimiento JIRA: {e}")
     CONOCIMIENTO_JIRA = None
+
 
 # ============================================================================
 # MANEJO GLOBAL DE ERRORES PARA DEVOLVER JSON
@@ -61,11 +62,13 @@ def not_found_error(error):
         return jsonify({"error": "Endpoint no encontrado"}), 404
     return render_template('404.html'), 404
 
+
 @app.errorhandler(500)
 def internal_error(error):
     if request.path.startswith('/api/'):
         return jsonify({"error": "Error interno del servidor"}), 500
     return render_template('500.html'), 500
+
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -73,6 +76,7 @@ def handle_exception(e):
     if request.path.startswith('/api/'):
         return jsonify({"error": "Error interno del servidor"}), 500
     return render_template('500.html'), 500
+
 
 # ============================================================================
 # ENDPOINT DE HEALTH CHECK
@@ -83,7 +87,7 @@ def health_check():
     """Endpoint para verificar el estado de la aplicación"""
     try:
         api_key = os.getenv("GEMINI_API_KEY")
-        
+
         status = {
             "status": "ok",
             "api_key_configured": bool(api_key),
@@ -92,30 +96,31 @@ def health_check():
             "upload_folder_exists": os.path.exists(UPLOAD_FOLDER),
             "dependencies": {}
         }
-        
+
         # Verificar dependencias
         try:
             import google.generativeai
             status["dependencies"]["genai"] = "ok"
         except ImportError:
             status["dependencies"]["genai"] = "missing"
-            
+
         try:
             import docx
             status["dependencies"]["docx"] = "ok"
         except ImportError:
             status["dependencies"]["docx"] = "missing"
-            
+
         try:
             from pypdf import PdfReader
             status["dependencies"]["pypdf"] = "ok"
         except ImportError:
             status["dependencies"]["pypdf"] = "missing"
-        
+
         return jsonify(status)
-        
+
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 # ============================================================================
 # RUTAS PRINCIPALES
@@ -125,17 +130,25 @@ def health_check():
 def menu_principal():
     return render_template('index.html')
 
+@app.route('/')
+def infografia():
+    return render_template('Infografia.html')
+
+
 @app.route('/matrix-generator')
 def matrix_generator():
     return render_template('matrix-generator.html')
+
 
 @app.route('/chat')
 def chat_assistant():
     return render_template('chat.html')
 
+
 @app.route('/story-creator')
 def story_creator():
     return render_template('story-creator.html')
+
 
 # ============================================================================
 # API ENDPOINTS CON MANEJO DE ERRORES
@@ -145,7 +158,7 @@ def story_creator():
 def generate_matrix():
     try:
         logger.info("Iniciando generación de matriz de pruebas")
-        
+
         # Verificar archivo
         if 'file' not in request.files:
             return jsonify({"error": "No se subió ningún archivo"}), 400
@@ -154,14 +167,22 @@ def generate_matrix():
         if file.filename == '':
             return jsonify({"error": "No se seleccionó un archivo"}), 400
 
-        # Obtener parámetros
+        # Obtener parámetros del formulario, incluyendo el nuevo campo 'historia' y 'types'
         context = request.form.get('contexto', '')
         flow = request.form.get('flujo', '')
+        historia = request.form.get('historia', '') # AÑADIDO: Obtiene la historia de usuario
+        types = request.form.getlist('types') # AÑADIDO: Obtiene los tipos de prueba
+        if not types:  # Si types está vacío, usar funcional por defecto
+            types = ['funcional']
+            logger.warning("No se especificaron tipos de prueba, usando 'funcional' por defecto")
         output_filename = request.form.get('output_filename', 'matriz_de_prueba')
-        
+
         logger.info(f"Procesando archivo: {file.filename}")
         logger.info(f"Contexto: {len(context)} caracteres")
         logger.info(f"Flujo: {len(flow)} caracteres")
+        logger.info(f"Historia de Usuario: {len(historia)} caracteres")
+        logger.info(f"Tipos de prueba: {types}")
+
 
         # Guardar archivo temporal
         filename = secure_filename(file.filename)
@@ -173,10 +194,11 @@ def generate_matrix():
             logger.info("Extrayendo texto del archivo")
             text = matrix_backend.extract_text_from_file(filepath)
             logger.info(f"Texto extraído: {len(text)} caracteres")
-            
+
             # Generar matriz
             logger.info("Generando matriz de pruebas")
-            result = matrix_backend.generar_matriz_test(context, flow, text)
+            # CAMBIADO: Se pasan los nuevos argumentos 'historia' y 'types'
+            result = matrix_backend.generar_matriz_test(context, flow, historia, text, types)
             logger.info(f"Resultado: {result['status']}")
 
             # Limpiar archivo temporal
@@ -226,10 +248,10 @@ def generate_matrix():
 def get_chat_response():
     try:
         logger.info("Procesando consulta de chat")
-        
+
         if not CONOCIMIENTO_JIRA:
             return jsonify({"error": "Conocimiento JIRA no disponible"}), 503
-        
+
         pregunta = request.json.get('pregunta', '') if request.json else ''
         if not pregunta:
             return jsonify({"error": "Por favor, escribe una pregunta"}), 400
@@ -237,9 +259,9 @@ def get_chat_response():
         logger.info(f"Pregunta: {pregunta[:100]}...")
         respuesta = consultar_gemini(pregunta, CONOCIMIENTO_JIRA)
         logger.info("Respuesta generada exitosamente")
-        
+
         return jsonify({"respuesta": respuesta})
-        
+
     except Exception as e:
         logger.error(f"Error en chat: {e}", exc_info=True)
         return jsonify({"error": f"Error procesando la consulta: {str(e)}"}), 500
@@ -249,7 +271,7 @@ def get_chat_response():
 def generate_and_download_story():
     try:
         logger.info("Iniciando generación de historias")
-        
+
         if 'file' not in request.files:
             return jsonify({"error": "No se subió ningún archivo"}), 400
 
@@ -261,8 +283,9 @@ def generate_and_download_story():
         role = request.form.get('role', 'Usuario')
         story_type = request.form.get('story_type', 'funcionalidad')
         output_filename = request.form.get('output_filename', 'historias_generadas')
+        business_context = request.form.get('business_context', '')  # ✅ Ahora sí lo capturamos
 
-        logger.info(f"Archivo: {file.filename}, Rol: {role}, Tipo: {story_type}")
+        logger.info(f"Archivo: {file.filename}, Rol: {role}, Tipo: {story_type}, Contexto: {len(business_context)} caracteres")
 
         # Guardar archivo temporal
         filename = secure_filename(file.filename)
@@ -277,13 +300,8 @@ def generate_and_download_story():
             # Procesar según tamaño
             if len(text) > 5000:
                 logger.info("Usando procesamiento avanzado para documento grande")
-                # CORREGIDO: No hardcodear API key
-                api_key = os.getenv("GEMINI_API_KEY")
-                if not api_key:
-                    raise Exception("API Key de Gemini no configurada")
-                
-                result = story_backend.process_large_document(text, role, story_type, api_key)
-                
+                result = story_backend.process_large_document(text, role, story_type, business_context)
+
                 if result['status'] == 'success':
                     stories = [result['story']]
                 else:
@@ -296,7 +314,7 @@ def generate_and_download_story():
                 stories = []
                 for i, chunk in enumerate(chunks, 1):
                     logger.info(f"Procesando chunk {i}/{len(chunks)}")
-                    result = story_backend.generate_story_from_chunk(chunk, role, story_type)
+                    result = story_backend.generate_story_from_chunk(chunk, role, story_type, business_context)
                     if result['status'] == 'success':
                         stories.append(result['story'])
                     else:
@@ -333,11 +351,9 @@ def generate_and_download_story():
         return jsonify({"error": f"Error interno: {str(e)}"}), 500
 
 
-@app.route('/api/story/preview', methods=['POST'])
-def preview_stories():
+@app.route('/api/preview', methods=['POST'])
+def preview():
     try:
-        logger.info("Previsualizando historias")
-        
         if 'file' not in request.files:
             return jsonify({"error": "No se subió ningún archivo"}), 400
 
@@ -346,7 +362,9 @@ def preview_stories():
             return jsonify({"error": "No se seleccionó un archivo"}), 400
 
         role = request.form.get('role', 'Usuario')
-        story_type = request.form.get('story_type', 'funcionalidad')
+        story_type = request.form.get('story_type', 'historia de usuario')
+        # CORRECTO: Se recupera el contexto adicional
+        business_context = request.form.get('business_context', '')
 
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -354,7 +372,7 @@ def preview_stories():
 
         try:
             text = story_backend.extract_text_from_file(filepath)
-            result = story_backend.generate_story_from_text(text, role, story_type)
+            result = story_backend.generate_story_from_text(text, role, story_type, business_context)
 
             if os.path.exists(filepath):
                 os.remove(filepath)

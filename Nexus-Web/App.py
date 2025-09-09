@@ -130,7 +130,7 @@ def health_check():
 def menu_principal():
     return render_template('index.html')
 
-@app.route('/')
+@app.route('/infografia')
 def infografia():
     return render_template('Infografia.html')
 
@@ -404,3 +404,4 @@ def preview():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
+

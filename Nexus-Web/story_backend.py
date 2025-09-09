@@ -407,8 +407,7 @@ def generate_story_from_chunk(chunk, role, story_type, business_context=None):
     Versión mejorada con prompts avanzados y contexto de negocio.
     """
     try:
-        # Hardcodear API key directamente
-        api_key = "AIzaSyAk_hIzA0Ts8ul-h14iXrriXTH45K6tjXM"  # Tu API key real
+        api_key = os.getenv("GEMINI_API_KEY")
 
         if not api_key:
             return {"status": "error", "message": "API Key no configurada."}
@@ -500,3 +499,4 @@ def generate_stories_with_context(document_text, role, story_type, business_cont
         dict: Resultado de la generación con status y contenido
     """
     return generate_story_from_text(document_text, role, story_type, business_context)
+

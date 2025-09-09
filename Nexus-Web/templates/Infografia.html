@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infografía de Nexus AI: El Futuro de la Automatización de QA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        .kpi-card {
+            background: #1e293b;
+            border-left: 5px solid #ffa600;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center my-12">
+            <h1 class="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">Nexus AI</h1>
+            <p class="text-xl md:text-2xl text-slate-300 mt-4 max-w-3xl mx-auto">Revolucionando el Ciclo de Vida del Desarrollo de Software con Inteligencia Artificial.</p>
+        </header>
+
+        <section id="introduction" class="my-16">
+            <div class="bg-slate-800 rounded-xl shadow-2xl p-8 md:p-12 text-center">
+                <p class="text-2xl text-slate-400 mb-4">La problemática: el tiempo perdido en tareas manuales de QA.</p>
+                <p class="text-7xl md:text-9xl font-extrabold text-amber-400">70-80%</p>
+                <p class="text-2xl md:text-3xl font-bold text-slate-200 mt-4">Reducción del tiempo dedicado a la documentación de pruebas.</p>
+                <p class="text-lg text-slate-300 mt-6 max-w-4xl mx-auto">Nexus AI ataca la mayor ineficiencia en los procesos de QA: la creación manual y repetitiva de historias de usuario y matrices de prueba. Al automatizar estas tareas, liberamos a los equipos para que se centren en lo que realmente aporta valor: la calidad del producto.</p>
+            </div>
+        </section>
+
+        <section id="problem" class="my-16">
+            <h2 class="text-3xl font-bold text-center mb-8">Diagnóstico de la Productividad Actual</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Distribución del Tiempo del Equipo de QA</h3>
+                    <div class="chart-container">
+                        <canvas id="timeDistributionChart"></canvas>
+                    </div>
+                </div>
+                <div class="text-slate-300">
+                    <h3 class="text-2xl font-bold mb-4 text-slate-100">El Costo Oculto de la Ineficiencia</h3>
+                    <p class="mb-4">Actualmente los equipos funcionales dedican una cantidad desproporcionada de su jornada a tareas de analisis y construcción de historias o casos de prueba. Este gráfico visualiza cómo la documentación manual consume la mayor parte del tiempo que podría invertirse en pruebas exploratorias o aun mas exahustivas.</p>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><span class="font-bold text-red-400">Inconsistencia y Errores:</span> La documentación manual es una fuente constante de errores humanos.</li>
+                        <li><span class="font-bold text-yellow-400">Falta de Estandarización:</span> Dificulta la colaboración y el escalado de los equipos.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="solution" class="my-16">
+            <h2 class="text-3xl font-bold text-center mb-8">La Solución: Arquitectura de Nexus AI</h2>
+            <p class="text-center text-slate-300 max-w-3xl mx-auto mb-10">Nexus AI se basa en una arquitectura moderna y escalable que garantiza un rendimiento robusto. El flujo de datos es seguro y eficiente, diseñado para procesar grandes volúmenes de información de manera rápida y fiable.</p>
+            <div class="bg-slate-800 p-8 rounded-lg shadow-xl">
+                   <div class="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0 md:space-x-4 text-center">
+                     <div class="flex flex-col items-center">
+                         <div class="bg-sky-500 rounded-full w-24 h-24 flex items-center justify-center text-4xl shadow-lg">👤</div>
+                         <p class="mt-2 font-bold">1. Usuario</p>
+                         <p class="text-sm text-slate-400">Inicia el proceso</p>
+                     </div>
+                     <div class="text-3xl text-slate-500 font-thin">→</div>
+                     <div class="flex flex-col items-center">
+                         <div class="bg-indigo-500 rounded-full w-24 h-24 flex items-center justify-center text-4xl shadow-lg">🖥️</div>
+                         <p class="mt-2 font-bold">2. Frontend</p>
+                         <p class="text-sm text-slate-400">Carga de archivos</p>
+                     </div>
+                     <div class="text-3xl text-slate-500 font-thin">→</div>
+                      <div class="flex flex-col items-center">
+                         <div class="bg-purple-500 rounded-full w-24 h-24 flex items-center justify-center text-4xl shadow-lg">⚙️</div>
+                         <p class="mt-2 font-bold">3. Backend (Flask)</p>
+                         <p class="text-sm text-slate-400">Procesa la petición</p>
+                     </div>
+                     <div class="text-3xl text-slate-500 font-thin">→</div>
+                     <div class="flex flex-col items-center">
+                         <div class="bg-pink-500 rounded-full w-24 h-24 flex items-center justify-center text-4xl shadow-lg">🧠</div>
+                         <p class="mt-2 font-bold">4. Google Gemini</p>
+                         <p class="text-sm text-slate-400">Genera contenido</p>
+                     </div>
+                     <div class="text-3xl text-slate-500 font-thin">→</div>
+                      <div class="flex flex-col items-center">
+                         <div class="bg-emerald-500 rounded-full w-24 h-24 flex items-center justify-center text-4xl shadow-lg">📄</div>
+                         <p class="mt-2 font-bold">5. Descarga</p>
+                         <p class="text-sm text-slate-400">Obtiene el resultado</p>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <section id="benefits" class="my-16">
+            <h2 class="text-3xl font-bold text-center mb-8">Beneficios Cuantificables y Métricas de Éxito</h2>
+            <p class="text-center text-slate-300 max-w-3xl mx-auto mb-10">La implementación de Nexus AI se traduce en mejoras medibles en todo el ciclo de desarrollo. Estos KPIs demuestran el impacto directo en la productividad, la calidad y la eficiencia del equipo.</p>
+              <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                 <h3 class="text-xl font-semibold mb-4 text-center">Incremento de Productividad y Calidad</h3>
+                 <div class="chart-container" style="height: 400px; max-height: 450px;">
+                     <canvas id="productivityGainsChart"></canvas>
+                 </div>
+            </div>
+        </section>
+
+        <section id="roadmap" class="my-16">
+            <h2 class="text-3xl font-bold text-center mb-8">Roadmap de Evolución: Crecimiento Continuo</h2>
+              <p class="text-center text-slate-300 max-w-3xl mx-auto mb-12">Nexus AI está diseñado para evolucionar. Nuestro roadmap asegura que la plataforma no solo resuelva los problemas actuales, sino que se anticipe a las necesidades futuras, integrándose cada vez más en el ecosistema de DevOps y QA.</p>
+            <div class="relative border-l-4 border-slate-700 ml-4 md:ml-0">
+                <div class="mb-10 ml-8">
+                    <div class="absolute w-6 h-6 bg-amber-400 rounded-full -left-3.5 border-4 border-slate-900"></div>
+                    <h3 class="text-xl font-bold text-amber-400">Fase 1: Implementación Actual</h3>
+                    <p class="text-slate-300 mt-1">Lanzamiento de las 3 herramientas clave: Chat Assistant, Story Creator y Matrix Generator.</p>
+                </div>
+                <div class="mb-10 ml-8">
+                    <div class="absolute w-6 h-6 bg-slate-600 rounded-full -left-3.5 border-4 border-slate-900"></div>
+                    <h3 class="text-xl font-bold text-slate-400">Fase 2: Mejoras (Próximos 6 meses)</h3>
+                    <p class="text-slate-300 mt-1">Integración nativa con JIRA y Confluence, soporte para más formatos de archivo y un dashboard de productividad para directivos.</p>
+                </div>
+                <div class="ml-8">
+                    <div class="absolute w-6 h-6 bg-slate-600 rounded-full -left-3.5 border-4 border-slate-900"></div>
+                    <h3 class="text-xl font-bold text-slate-400">Fase 3: Expansión (12+ meses)</h3>
+                    <p class="text-slate-300 mt-1">Automatización de Gherkin (BDD), generación de pruebas de rendimiento y análisis de código fuente para pruebas unitarias.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center mt-16 py-8 border-t border-slate-700">
+              <p class="text-slate-400">Nexus AI: Una Inversión Estratégica en Calidad, Productividad y Futuro.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        const tooltipTitleCallback = (tooltipItems) => {
+            const item = tooltipItems[0];
+            let label = item.chart.data.labels[item.dataIndex];
+            if (Array.isArray(label)) {
+                return label.join(' ');
+            }
+            return label;
+        };
+
+        const wrapLabel = (label) => {
+            const maxLength = 16;
+            if (label.length <= maxLength) return label;
+
+            const words = label.split(' ');
+            const lines = [];
+            let currentLine = '';
+
+            words.forEach(word => {
+                if ((currentLine + word).length > maxLength) {
+                    lines.push(currentLine.trim());
+                    currentLine = '';
+                }
+                currentLine += word + ' ';
+            });
+            lines.push(currentLine.trim());
+            return lines;
+        };
+
+        const colors = {
+            primary: '#ffa600',
+            secondary: '#ff764a',
+            accent1: '#ef5675',
+            accent2: '#7a5195',
+            background: 'rgba(255, 166, 0, 0.2)',
+            border: '#ffa600',
+            grid: 'rgba(255, 255, 255, 0.1)',
+            text: '#FFFFFF'
+        };
+
+        const defaultChartOptions = {
+            maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: colors.text
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: tooltipTitleCallback
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: colors.text, maxRotation: 0, autoSkip: true },
+                    grid: { color: colors.grid }
+                },
+                y: {
+                    ticks: { color: colors.text },
+                    grid: { color: colors.grid },
+                    beginAtZero: true
+                }
+            }
+        };
+
+
+        const timeDistributionCtx = document.getElementById('timeDistributionChart');
+        if (timeDistributionCtx) {
+            new Chart(timeDistributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Documentación Manual y Repetitiva', 'Pruebas Exploratorias y de Valor', 'Gestión y Reuniones'],
+                    datasets: [{
+                        label: 'Distribución del Tiempo',
+                        data: [60, 25, 15],
+                        backgroundColor: [colors.accent1, colors.primary, colors.accent2],
+                        borderColor: '#1e293b',
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                     maintainAspectRatio: false,
+                     responsive: true,
+                     plugins: {
+                         legend: { position: 'bottom', labels: { color: colors.text } },
+                         tooltip: { callbacks: { title: tooltipTitleCallback } }
+                    }
+                }
+            });
+        }
+
+
+        const costComparisonCtx = document.getElementById('costComparisonChart');
+        if (costComparisonCtx) {
+            new Chart(costComparisonCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Nexus AI (Solución Interna)', 'Herramienta Comercial (Promedio)'],
+                    datasets: [{
+                        label: 'Costo Anual Estimado (USD)',
+                        data: [5600, 4500],
+                        backgroundColor: [colors.primary, colors.accent2],
+                        borderColor: [colors.border, '#7a5195'],
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: { ...defaultChartOptions, indexAxis: 'y' }
+            });
+        }
+
+        const productivityGainsCtx = document.getElementById('productivityGainsChart');
+        if (productivityGainsCtx) {
+            const originalLabels = [
+                'Aumento de Velocidad en Generación de e Historias de Usuario',
+                'Reducción de Errores de Documentación',
+                'Reducción de tiempos de respuesta sobre procesos de QA'
+            ];
+
+            new Chart(productivityGainsCtx, {
+                type: 'bar',
+                data: {
+                    labels: originalLabels.map(wrapLabel),
+                    datasets: [{
+                        label: 'Mejora (%)',
+                        data: [80, 100, 50],
+                        backgroundColor: [colors.primary, colors.secondary, colors.accent1],
+                         borderColor: [colors.border, '#ff764a', '#ef5675'],
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    ...defaultChartOptions,
+                    scales: {
+                         x: {
+                             ticks: { color: colors.text },
+                             grid: { color: colors.grid }
+                         },
+                         y: {
+                             ticks: { color: colors.text, callback: function(value) { return value + '%' } },
+                             grid: { color: colors.grid },
+                             beginAtZero: true
+                         }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

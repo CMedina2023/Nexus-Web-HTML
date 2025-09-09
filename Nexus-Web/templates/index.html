@@ -90,6 +90,34 @@
             gap: 1rem;
         }
 
+        /* New button styles */
+        .overview-btn {
+            background: linear-gradient(135deg, #ffa600, #ff764a);
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(255, 166, 0, 0.2);
+        }
+
+        .overview-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 166, 0, 0.3);
+            background: linear-gradient(135deg, #ff9500, #ff6b3a);
+        }
+
+        .overview-btn .icon {
+            font-size: 1rem;
+        }
+
         .user-info {
             display: flex;
             align-items: center;
@@ -467,6 +495,11 @@
                 gap: 1rem;
             }
 
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
             .tools-grid {
                 grid-template-columns: 1fr;
             }
@@ -484,16 +517,16 @@
                 </div>
             </div>
             <div class="header-actions">
+                <a href="/overview" class="overview-btn">
+                    <span class="icon">📊</span>
+                    Ver Beneficios
+                </a>
                 <div class="user-info">
                     <div class="status-indicator"></div>
                     <span class="user-text">Online</span>
                 </div>
             </div>
         </header>
-
-
-
-
 
         <main>
             <div class="section-header">
@@ -587,8 +620,6 @@
             </div>
         </main>
 
-
-
         <footer class="footer">
             <p>&copy; 2025 Nexus AI - Hub de Herramientas Inteligentes</p>
         </footer>
@@ -615,7 +646,7 @@
                     window.location.href = href;
                 }
             });
-2
+
             // Mejorar accesibilidad
             card.setAttribute('tabindex', '0');
             card.setAttribute('role', 'button');
@@ -629,5 +660,3 @@
     </script>
 </body>
 </html>
-
-

@@ -219,10 +219,24 @@
             font-size: 0.95rem;
             font-weight: 500;
             color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-label .optional {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            background: rgba(107, 114, 128, 0.1);
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(107, 114, 128, 0.2);
         }
 
         .form-input,
-        .form-select {
+        .form-select,
+        .form-textarea {
             background: var(--secondary-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -230,17 +244,27 @@
             color: var(--text-primary);
             font-size: 0.95rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            max-height: 200px;
+            resize: vertical;
+            line-height: 1.6;
         }
 
         .form-input:focus,
-        .form-select:focus {
+        .form-select:focus,
+        .form-textarea:focus {
             outline: none;
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
             transform: translateY(-2px);
         }
 
-        .form-input::placeholder {
+        .form-input::placeholder,
+        .form-textarea::placeholder {
             color: var(--text-muted);
         }
 
@@ -342,6 +366,23 @@
             border-top: 1px solid rgba(16, 185, 129, 0.1);
             margin-top: 0.5rem;
             padding-top: 0.75rem;
+        }
+
+        /* Context Info Box */
+        .context-info {
+            background: rgba(79, 172, 254, 0.05);
+            border: 1px solid rgba(79, 172, 254, 0.15);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .context-info::before {
+            content: '💡 ';
+            margin-right: 0.25rem;
         }
 
         /* Action Buttons */
@@ -744,6 +785,22 @@
         .results-content::-webkit-scrollbar-thumb:hover {
             background: var(--accent);
         }
+
+        /* Character counter */
+        .char-counter {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 0.25rem;
+        }
+
+        .char-counter.warning {
+            color: var(--warning);
+        }
+
+        .char-counter.error {
+            color: var(--error);
+        }
     </style>
 </head>
 <body>
@@ -817,6 +874,27 @@
                             <option value="característica">Historias No Funcionales</option>
                         </select>
                     </div>
+
+                    <!-- Business Context (New Field) -->
+                    <div class="form-group full-width">
+                        <label class="form-label" for="business-context">
+                            Contexto adicional de negocio
+                            <span class="optional">Opcional</span>
+                        </label>
+                        <textarea
+                            id="business-context"
+                            name="business_context"
+                            class="form-textarea"
+                            maxlength="2000"
+                            placeholder="Ejemplo: Tomar en cuenta la regla de negocio 3 sobre validación de usuarios premium, aplicar políticas de seguridad nivel 2, considerar integración con sistema de facturación..."
+                        ></textarea>
+                        <div class="char-counter" id="context-counter">0 / 2000 caracteres</div>
+                        <div class="context-info">
+                            Este campo permite agregar contexto específico que complementará el análisis del documento.
+                            Puedes incluir reglas de negocio específicas, políticas empresariales, o cualquier consideración adicional
+                            que el generador debe tomar en cuenta al crear las historias de usuario.
+                        </div>
+                    </div>
                 </div>
             </form>
         </section>
@@ -887,6 +965,8 @@
                 this.generateBtn = document.getElementById('generate-btn');
                 this.progressSection = document.getElementById('progress-section');
                 this.resultsSection = document.getElementById('results-section');
+                this.contextTextarea = document.getElementById('business-context');
+                this.contextCounter = document.getElementById('context-counter');
 
                 this.startTime = null;
 
@@ -896,6 +976,24 @@
             init() {
                 this.setupFileUpload();
                 this.setupEventListeners();
+                this.setupContextCounter();
+            }
+
+            setupContextCounter() {
+                this.contextTextarea.addEventListener('input', (e) => {
+                    const length = e.target.value.length;
+                    const maxLength = 2000;
+
+                    this.contextCounter.textContent = `${length} / ${maxLength} caracteres`;
+
+                    // Update counter styling based on length
+                    this.contextCounter.classList.remove('warning', 'error');
+                    if (length > maxLength * 0.9) {
+                        this.contextCounter.classList.add('error');
+                    } else if (length > maxLength * 0.8) {
+                        this.contextCounter.classList.add('warning');
+                    }
+                });
             }
 
             setupFileUpload() {
@@ -1039,7 +1137,11 @@
                     const data = await response.json();
 
                     if (response.ok && data.status === 'success') {
-                        const previewContent = `Vista previa de historias generadas
+                        const contextInfo = formData.get('business_context')
+                            ? `\nContexto adicional aplicado: ${formData.get('business_context').substring(0, 100)}...`
+                            : '';
+
+                        const previewContent = `Vista previa de historias generadas${contextInfo}
 
 ${data.stories.join('\n\n' + '='.repeat(80) + '\n\n')}
 
@@ -1092,11 +1194,14 @@ Resumen:
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
 
+                        const contextUsed = formData.get('business_context') ? 'Sí' : 'No';
+
                         this.showResults(`Descarga completada exitosamente
 
 Archivo generado: ${formData.get('output_filename')}.docx
 Rol: ${formData.get('role')}
 Tipo: ${formData.get('story_type')}
+Contexto adicional: ${contextUsed}
 
 El archivo ha sido descargado automáticamente y contiene todas las historias de usuario generadas con el formato avanzado que incluye:
 

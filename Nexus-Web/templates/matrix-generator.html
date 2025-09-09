@@ -855,7 +855,7 @@
             <form id="matrix-form">
                 <div class="form-grid">
                     <div class="form-group full-width">
-                        <label class="form-label">Documento de requerimientos</label>
+                        <label class="form-label" for="file-upload">Documento de requerimientos</label>
                         <div class="file-upload-container">
                             <div class="file-upload-area" id="file-upload-area">
                                 <div class="file-upload-icon">📄</div>
@@ -907,7 +907,7 @@
 
             <div class="checkbox-group">
                 <div class="checkbox-item">
-                    <input type="checkbox" id="funcional-tests" name="test_types" value="funcional" checked>
+                    <input type="checkbox" id="funcional-tests" name="types" value="funcional" checked>
                     <label for="funcional-tests" class="checkbox-label">Pruebas Funcionales</label>
                 </div>
                 <div class="checkbox-description">
@@ -915,7 +915,7 @@
                 </div>
 
                 <div class="checkbox-item">
-                    <input type="checkbox" id="no-funcional-tests" name="test_types" value="no_funcional" checked>
+                    <input type="checkbox" id="no-funcional-tests" name="types" value="no_funcional" checked>
                     <label for="no-funcional-tests" class="checkbox-label">Pruebas No Funcionales</label>
                 </div>
                 <div class="checkbox-description">
@@ -1030,14 +1030,20 @@
                 this.fileUploadArea.addEventListener('drop', (e) => {
                     const files = e.dataTransfer.files;
                     if (files.length > 0) {
-                        this.fileInput.files = files;
+                        // CORREGIDO: Asignar archivos correctamente para drag & drop
+                        const dt = new DataTransfer();
+                        dt.items.add(files[0]);
+                        this.fileInput.files = dt.files;
                         this.displayFileInfo(files[0]);
                     }
                 }, false);
 
-                // Click to select file
-                this.fileUploadArea.addEventListener('click', () => {
-                    this.fileInput.click();
+                // Click to select file - CORREGIDO: Manejo mejorado del click
+                this.fileUploadArea.addEventListener('click', (e) => {
+                    // Evitar conflictos con otros elementos dentro del área
+                    if (!this.fileInput.hasAttribute('disabled')) {
+                        this.fileInput.click();
+                    }
                 });
             }
 
@@ -1071,7 +1077,7 @@
             }
 
             getSelectedTestTypes() {
-                const checkboxes = document.querySelectorAll('input[name="test_types"]:checked');
+                const checkboxes = document.querySelectorAll('input[name="types"]:checked');
                 return Array.from(checkboxes).map(cb => cb.value);
             }
 
@@ -1121,10 +1127,6 @@
                 document.getElementById('stats-grid').style.display = 'none';
             }
 
-            formatNumber(num) {
-                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-            }
-
             setButtonsState(disabled) {
                 this.previewBtn.disabled = disabled;
                 this.generateBtn.disabled = disabled;
@@ -1161,8 +1163,13 @@
                     const data = await response.json();
 
                     if (response.ok && data.status === 'success') {
-                        const funcionalCount = data.test_cases.filter(tc => tc.tipo?.toLowerCase() === 'funcional').length;
-                        const noFuncionalCount = data.test_cases.filter(tc => tc.tipo?.toLowerCase() === 'no funcional').length;
+                        const testCases = data.matrix || data.test_cases || [];
+                        const funcionalCount = testCases.filter(tc =>
+                            (tc.Tipo_de_prueba || tc.tipo || '').toLowerCase().includes('funcional')
+                        ).length;
+                        const noFuncionalCount = testCases.filter(tc =>
+                            (tc.Tipo_de_prueba || tc.tipo || '').toLowerCase().includes('no funcional')
+                        ).length;
 
                         const previewContent = `Vista previa de la matriz de pruebas generada
 
@@ -1175,25 +1182,26 @@ ${'='.repeat(80)}
 
 CASOS DE PRUEBA GENERADOS:
 
-${data.test_cases.map((testCase, index) =>
-    `${index + 1}. ${testCase.nombre || testCase.title || 'Sin nombre'}
-   Tipo: ${testCase.tipo || testCase.type || 'No especificado'}
-   Categoría: ${testCase.categoria || testCase.category || 'No especificada'}
-   Descripción: ${testCase.descripcion || testCase.description || 'Sin descripción'}
-   Prioridad: ${testCase.prioridad || testCase.priority || 'No especificada'}
+${testCases.map((testCase, index) =>
+    `${index + 1}. ${testCase.titulo_caso_prueba || testCase.nombre || testCase.title || 'Sin nombre'}
+   ID: ${testCase.id_caso_prueba || `TC${(index + 1).toString().padStart(3, '0')}`}
+   Tipo: ${testCase.Tipo_de_prueba || testCase.tipo || testCase.type || 'No especificado'}
+   Categoría: ${testCase.Categoria || testCase.categoria || testCase.category || 'No especificada'}
+   Descripción: ${testCase.Descripcion || testCase.descripcion || testCase.description || 'Sin descripción'}
+   Prioridad: ${testCase.Prioridad || testCase.prioridad || testCase.priority || 'No especificada'}
+
+   Precondiciones: ${testCase.Precondiciones || testCase.precondiciones || 'No especificadas'}
 
    Pasos a seguir:
-${(testCase.pasos || testCase.steps || []).map((step, stepIndex) => `   ${stepIndex + 1}. ${step}`).join('\n')}
+${(testCase.Pasos || testCase.pasos || testCase.steps || []).map((step, stepIndex) => `   ${stepIndex + 1}. ${step}`).join('\n')}
 
-   Resultado esperado: ${testCase.resultado_esperado || testCase.expected_result || 'No especificado'}
-
-   Criterios de aceptación: ${testCase.criterios_aceptacion || testCase.acceptance_criteria || 'No especificados'}
+   Resultado esperado: ${Array.isArray(testCase.Resultado_esperado) ? testCase.Resultado_esperado.join('. ') : testCase.Resultado_esperado || testCase.resultado_esperado || testCase.expected_result || 'No especificado'}
 `).join('\n' + '='.repeat(80) + '\n')}
 
 ${'='.repeat(80)}
 
 RESUMEN ESTADÍSTICO:
-✓ Total de casos de prueba: ${data.total_cases || data.test_cases.length}
+✓ Total de casos de prueba: ${testCases.length}
 ✓ Pruebas funcionales: ${funcionalCount}
 ✓ Pruebas no funcionales: ${noFuncionalCount}
 ✓ Tipos seleccionados: ${selectedTypes.join(', ')}
@@ -1201,12 +1209,15 @@ RESUMEN ESTADÍSTICO:
 ✓ Flujo especificado: ${formData.get('flujo') ? 'Sí' : 'No'}`;
 
                         this.showResults(previewContent, {
-                            totalCases: data.total_cases || data.test_cases.length,
+                            totalCases: testCases.length,
                             funcionalCases: funcionalCount,
                             noFuncionalCases: noFuncionalCount
                         });
+
+                        // Mostrar stats grid
+                        document.getElementById('stats-grid').style.display = 'grid';
                     } else {
-                        this.showError(data.error || 'Error al generar la vista previa');
+                        this.showError(data.message || data.error || 'Error al generar la vista previa');
                     }
 
                 } catch (error) {
@@ -1277,9 +1288,12 @@ El archivo ZIP ha sido descargado automáticamente y contiene:
 
 Lista para usar en tu proyecto de testing.`);
 
+                        // Ocultar stats grid para mensajes de éxito
+                        document.getElementById('stats-grid').style.display = 'none';
+
                     } else {
                         const data = await response.json();
-                        this.showError(data.error || 'Error desconocido en la generación');
+                        this.showError(data.message || data.error || 'Error desconocido en la generación');
                     }
 
                 } catch (error) {

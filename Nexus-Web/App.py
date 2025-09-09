@@ -60,22 +60,50 @@ except Exception as e:
 def not_found_error(error):
     if request.path.startswith('/api/'):
         return jsonify({"error": "Endpoint no encontrado"}), 404
-    return render_template('404.html'), 404
-
+    # ✅ Respuesta simple sin template
+    return f"""
+    <html>
+        <head><title>404 - Página no encontrada</title></head>
+        <body>
+            <h1>404 - Página no encontrada</h1>
+            <p>La página que buscas no existe.</p>
+            <a href="/">Volver al inicio</a>
+        </body>
+    </html>
+    """, 404
 
 @app.errorhandler(500)
 def internal_error(error):
     if request.path.startswith('/api/'):
         return jsonify({"error": "Error interno del servidor"}), 500
-    return render_template('500.html'), 500
-
+    # ✅ Respuesta simple sin template
+    return f"""
+    <html>
+        <head><title>500 - Error interno</title></head>
+        <body>
+            <h1>500 - Error interno del servidor</h1>
+            <p>Ha ocurrido un error interno.</p>
+            <a href="/">Volver al inicio</a>
+        </body>
+    </html>
+    """, 500
 
 @app.errorhandler(Exception)
 def handle_exception(e):
     logger.error(f"Error no manejado: {e}", exc_info=True)
     if request.path.startswith('/api/'):
         return jsonify({"error": "Error interno del servidor"}), 500
-    return render_template('500.html'), 500
+    # ✅ Respuesta simple sin template
+    return f"""
+    <html>
+        <head><title>Error</title></head>
+        <body>
+            <h1>Error</h1>
+            <p>Ha ocurrido un error inesperado.</p>
+            <a href="/">Volver al inicio</a>
+        </body>
+    </html>
+    """, 500
 
 
 # ============================================================================
@@ -133,6 +161,10 @@ def menu_principal():
 @app.route('/infografia')
 def infografia():
     return render_template('Infografia.html')
+
+@app.route('/overview')
+def overview():
+    return redirect('/infografia')
 
 
 @app.route('/matrix-generator')
@@ -404,4 +436,5 @@ def preview():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 

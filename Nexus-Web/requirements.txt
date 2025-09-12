@@ -8,3 +8,4 @@ google-generativeai>=0.3.0
 google-api-core
 google-auth
 pandas
+openpyxl

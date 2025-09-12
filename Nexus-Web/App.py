@@ -52,6 +52,7 @@ except Exception as e:
     CONOCIMIENTO_JIRA = None
 
 
+
 # ============================================================================
 # MANEJO GLOBAL DE ERRORES PARA DEVOLVER JSON
 # ============================================================================
@@ -166,7 +167,6 @@ def infografia():
 def overview():
     return redirect('/infografia')
 
-
 @app.route('/matrix-generator')
 def matrix_generator():
     return render_template('matrix-generator.html')
@@ -251,6 +251,10 @@ def generate_matrix():
                     # CSV
                     csv_content = matrix_backend.save_to_csv_buffer(matrix_data)
                     zip_file.writestr(f"{output_filename}.csv", csv_content)
+
+                    # XLSX
+                    xlsx_content = matrix_backend.save_to_xlsx_buffer(matrix_data)
+                    zip_file.writestr(f"{output_filename}.xlsx", xlsx_content)
 
                 zip_buffer.seek(0)
                 logger.info("Archivo ZIP creado exitosamente")
@@ -436,6 +440,3 @@ def preview():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
-

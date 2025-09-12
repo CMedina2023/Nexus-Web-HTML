@@ -277,7 +277,7 @@ def extract_stories_from_text(text):
 
 def generar_matriz_test(contexto, flujo, historia, texto_documento, tipos_prueba=['funcional', 'no_funcional']):
     try:
-        api_key = "AIzaSyCAvd1ItJzSVGBL-zmHV6UkqPphW55EDlg"
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             return {"status": "error",
                     "message": "API Key no configurada. Configura GEMINI_API_KEY como variable de entorno."}
@@ -820,3 +820,4 @@ def test_matrix_generation():
 if __name__ == "__main__":
     # Ejecutar prueba si se ejecuta directamente
     test_matrix_generation()
+

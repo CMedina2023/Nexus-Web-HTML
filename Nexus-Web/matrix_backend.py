@@ -8,10 +8,150 @@ import re
 import io
 import zipfile
 from datetime import datetime
+from difflib import SequenceMatcher
+import pandas as pd
+
 
 # ----------------------------
 # Utilidades de lectura
 # ----------------------------
+def similarity(a, b):
+    """Calcula similitud entre dos strings (ratio 0-1)."""
+    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+
+
+def deduplicate_cases(cases):
+    """Elimina casos duplicados de manera más inteligente."""
+    if not cases:
+        return cases
+
+    unique_cases = []
+    seen_patterns = set()
+
+    for case in cases:
+        # Crear un patrón único basado en título + tipo + categoría
+        title = case['titulo_caso_prueba'].lower().strip()
+        test_type = case['Tipo_de_prueba'].lower()
+        category = case['Categoria'].lower() if case.get('Categoria') else ''
+
+        # Normalizar el título (remover stopwords, puntuación)
+        normalized_title = re.sub(r'\b(el|la|de|en|a|por|para|con|verificar|validar|comprobar)\b', '', title)
+        normalized_title = re.sub(r'[^\w\s]', '', normalized_title).strip()
+
+        # Crear huella digital del caso
+        case_fingerprint = f"{normalized_title}_{test_type}_{category}"
+
+        # Verificar similitud con casos existentes
+        is_duplicate = False
+        for seen_fingerprint in seen_patterns:
+            if similarity(case_fingerprint, seen_fingerprint) > 0.85:
+                is_duplicate = True
+                break
+
+        if not is_duplicate:
+            seen_patterns.add(case_fingerprint)
+            unique_cases.append(case)
+
+    return unique_cases
+
+
+def normalize_matrix_data(matrix_data):
+    """Normaliza los datos de la matriz para consistencia."""
+    normalized_data = []
+
+    for i, case in enumerate(matrix_data, 1):
+        # Crear una copia del caso para no modificar el original
+        normalized_case = case.copy()
+
+        # ASIGNAR NUEVO ID SECUENCIAL (sobreescribir cualquier ID existente)
+        normalized_case['id_caso_prueba'] = f"TC{i:03d}"
+
+        # Normalizar Pasos (siempre array)
+        pasos = normalized_case.get('Pasos', [])
+        if not isinstance(pasos, list):
+            if isinstance(pasos, str):
+                steps = []
+                lines = pasos.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    if line:
+                        # Remover numeración si existe (1., 2., etc.)
+                        line = re.sub(r'^\d+[\.\)]\s*', '', line)
+                        steps.append(line)
+                normalized_case['Pasos'] = steps if steps else ['Paso por definir']
+            else:
+                normalized_case['Pasos'] = ['Paso por definir']
+        else:
+            # Limpiar cada paso si ya es array
+            cleaned_steps = []
+            for step in pasos:
+                if isinstance(step, str):
+                    step = step.strip()
+                    step = re.sub(r'^\d+[\.\)]\s*', '', step)
+                    if step:
+                        cleaned_steps.append(step)
+                elif step:
+                    cleaned_steps.append(str(step))
+            normalized_case['Pasos'] = cleaned_steps if cleaned_steps else ['Paso por definir']
+
+        # Normalizar Resultado_esperado (siempre array)
+        resultados = normalized_case.get('Resultado_esperado', [])
+        if not isinstance(resultados, list):
+            if isinstance(resultados, str):
+                results = []
+                # Separar por puntos, saltos de línea o números
+                lines = re.split(r'[\.\n]|\d+[\.\)]\s*', resultados)
+                for line in lines:
+                    line = line.strip()
+                    if line:
+                        if not line.endswith('.'):
+                            line += '.'
+                        results.append(line)
+                normalized_case['Resultado_esperado'] = results if results else ['Resultado por definir']
+            else:
+                normalized_case['Resultado_esperado'] = ['Resultado por definir']
+        else:
+            # Limpiar cada resultado si ya es array
+            cleaned_results = []
+            for result in resultados:
+                if isinstance(result, str):
+                    result = result.strip()
+                    if result:
+                        if not result.endswith('.'):
+                            result += '.'
+                        cleaned_results.append(result)
+                elif result:
+                    result_str = str(result).strip()
+                    if result_str:
+                        if not result_str.endswith('.'):
+                            result_str += '.'
+                        cleaned_results.append(result_str)
+            normalized_case['Resultado_esperado'] = cleaned_results if cleaned_results else ['Resultado por definir']
+
+        # Asegurar campos requeridos
+        required_fields = {
+            'titulo_caso_prueba': 'Título por definir',
+            'Descripcion': 'Descripción por definir',
+            'Precondiciones': 'Precondiciones por definir',
+            'Tipo_de_prueba': 'Funcional',
+            'Nivel_de_prueba': 'UAT',
+            'Tipo_de_ejecucion': 'Manual',
+            'Categoria': 'Flujo Principal',
+            'Ambiente': 'QA',
+            'Ciclo': 'Ciclo 1',
+            'issuetype': 'Test Case',
+            'Prioridad': 'Media',
+            'historia_de_usuario': 'Historia de usuario general'
+        }
+
+        for field, default_value in required_fields.items():
+            if field not in normalized_case or not normalized_case[field]:
+                normalized_case[field] = default_value
+
+        normalized_data.append(normalized_case)
+
+    return normalized_data
+
 def extract_text_from_file(file_path):
     """Extrae texto de archivos .docx o .pdf."""
     try:
@@ -74,47 +214,54 @@ def split_document_into_chunks(text, max_chunk_size=4000):
         chunks = [text]
     return chunks
 
+
 def clean_json_response(response_text):
-    """Limpia y extrae JSON de la respuesta del modelo."""
+    """Limpia y extrae JSON de la respuesta del modelo con mejor manejo de errores."""
     if not response_text:
         return None
-    try:
-        data = json.loads(response_text)
-        if isinstance(data, list):
-            return data
-        elif isinstance(data, dict) and 'matrix' in data:
-            return data['matrix']
-        elif isinstance(data, dict) and 'test_cases' in data:
-            return data['test_cases']
-    except json.JSONDecodeError:
-        pass
+
+    # Intentar limpiar texto problemático
+    cleaned_text = response_text.strip()
+
+    # Remover markdown code blocks
+    cleaned_text = re.sub(r'```json\s*', '', cleaned_text)
+    cleaned_text = re.sub(r'```\s*', '', cleaned_text)
+
+    # Buscar JSON array
     json_patterns = [
-        r'```json\s*\n([\s\S]*?)\n```',
-        r'```\s*\n([\s\S]*?)\n```',
-        r'\[[\s\S]*\]'
+        r'\[\s*\{[\s\S]*?\}\s*\]',  # Array de objetos
+        r'\{[\s\S]*?"test_cases"[\s\S]*?\}',  # Objeto con test_cases
+        r'\{[\s\S]*?"matrix"[\s\S]*?\}'  # Objeto con matrix
     ]
+
     for pattern in json_patterns:
-        match = re.search(pattern, response_text, re.MULTILINE)
+        match = re.search(pattern, cleaned_text, re.MULTILINE)
         if match:
-            json_str = match.group(1).strip()
+            json_str = match.group(0).strip()
             try:
                 data = json.loads(json_str)
                 if isinstance(data, list):
                     return data
                 elif isinstance(data, dict) and 'matrix' in data:
                     return data['matrix']
-            except json.JSONDecodeError:
+                elif isinstance(data, dict) and 'test_cases' in data:
+                    return data['test_cases']
+            except json.JSONDecodeError as e:
+                print(f"Error parsing JSON: {e}")
                 continue
+
+    # Último intento: buscar cualquier array
     try:
-        start = response_text.find('[')
-        end = response_text.rfind(']')
+        start = cleaned_text.find('[')
+        end = cleaned_text.rfind(']')
         if start != -1 and end != -1 and end > start:
-            json_str = response_text[start:end + 1]
+            json_str = cleaned_text[start:end + 1]
             data = json.loads(json_str)
             if isinstance(data, list):
                 return data
     except json.JSONDecodeError:
         pass
+
     return None
 
 def clean_text(text):
@@ -130,7 +277,7 @@ def extract_stories_from_text(text):
 
 def generar_matriz_test(contexto, flujo, historia, texto_documento, tipos_prueba=['funcional', 'no_funcional']):
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = "AIzaSyCAvd1ItJzSVGBL-zmHV6UkqPphW55EDlg"
         if not api_key:
             return {"status": "error",
                     "message": "API Key no configurada. Configura GEMINI_API_KEY como variable de entorno."}
@@ -146,7 +293,14 @@ def generar_matriz_test(contexto, flujo, historia, texto_documento, tipos_prueba
         prompt_base = """
 Eres un experto en Testing y Quality Assurance. Tu tarea es analizar requerimientos y generar casos de prueba completos.
 
-RESPUESTA REQUERIDA: Devuelve ÚNICAMENTE un array JSON válido con objetos de casos de prueba. Cada objeto debe tener exactamente estas claves:
+**INSTRUCCIONES CRÍTICAS:**
+1. **CONSISTENCIA**: Genera aproximadamente el mismo número de casos para historias similares
+2. **COBERTURA**: Prioriza variedad sobre cantidad (no tengas un maximo ni minimo de casos de prueba, genera los necesarios para considerar una cobertura completa)
+3. **EVITA DUPLICADOS**: No repitas el mismo escenario con variaciones menores
+4. **ENFOQUE**: Cada caso debe cubrir un aspecto único del requerimiento
+5. **FORMATO ESTRICTO**: Sigue EXACTAMENTE el formato especificado
+
+RESPUESTA REQUERIDA: Devuelve ÚNICAMENTE un array JSON válido. Cada objeto debe tener EXACTAMENTE estas claves:
 
 {
   "id_caso_prueba": "TC001",
@@ -165,6 +319,17 @@ RESPUESTA REQUERIDA: Devuelve ÚNICAMENTE un array JSON válido con objetos de c
   "Prioridad": "Alta/Media/Baja",
   "historia_de_usuario": "Referencia a la historia de usuario"
 }
+
+**IMPORTANTE ABSOLUTO:**
+- "Pasos" debe ser SIEMPRE un array de strings, SIN numeración interna
+- "Resultado_esperado" debe ser SIEMPRE un array de strings completos
+- NO incluir "id_caso_prueba" en tu respuesta, el sistema lo generará automáticamente
+- Responde SOLO con el array JSON válido, sin texto adicional
+
+**INSTRUCCIONES DE NUMERACIÓN:**
+- NO incluir números en los títulos de los casos
+- NO usar "Caso 1", "Caso 2", etc. en los títulos
+- Los IDs serán generados automáticamente por el sistema
 
 CATEGORÍAS VÁLIDAS:
 - Funcional: "Flujo Principal", "Flujos Alternativos", "Casos Límite", "Casos de Error"
@@ -263,65 +428,68 @@ GENERA SOLO CASOS NO FUNCIONALES (no tengas un limite de casos generados, siempr
                 continue
 
             print(f"Procesando fragmento {i + 1}/{total_chunks} (Historia: {historia_chunk})")
-            print(f"Tamaño del chunk: {len(chunk)} caracteres")
-            chunk = clean_text(chunk)
-            print(f"Tamaño del chunk limpio: {len(chunk)} caracteres")
-
-            prompt_completo = f"""{prompt_base}
-{prompt_tipos}
-CONTEXTO DEL SISTEMA:
-{contexto or 'Sistema de software a ser probado'}
-FLUJO ESPECÍFICO:
-{flujo or 'Flujos generales del sistema'}
-HISTORIA DE USUARIO:
-{historia_chunk}
-FRAGMENTO DEL DOCUMENTO A ANALIZAR ({i + 1}/{total_chunks}):
-{chunk}
-INSTRUCCIONES:
-1. Analiza este fragmento del documento
-2. Genera casos de prueba específicos para el contenido encontrado
-3. Asegúrate de que cada caso sea único y tenga valor específico
-4. Los pasos deben ser claros y ejecutables
-5. Los resultados esperados deben ser verificables
-6. Usa '{historia_chunk}' como valor para el campo 'historia_de_usuario' en cada caso
-Responde ÚNICAMENTE con el array JSON de casos de prueba:"""
-            print(f"Prompt enviado (primeros 500 caracteres): {prompt_completo[:500]}...")
+            prompt_completo = f"{prompt_base}\n\n{prompt_tipos}\n\nCONTEXTO DEL SISTEMA: {contexto}\n\nFLUJOS A CONSIDERAR: {flujo}\n\nHISTORIA DE USUARIO: {historia}\n\nTEXTO DEL DOCUMENTO (REQUERIMIENTOS): {chunk}\n\nGenera casos de prueba basados en este requerimiento específico."
 
             try:
                 response = model.generate_content(prompt_completo)
-                if not response or not hasattr(response, 'text') or not response.text:
-                    print(f"Respuesta vacía o inválida del modelo para fragmento {i + 1}")
-                    continue
+                if response.text.strip():
+                    print(f"Respuesta del modelo para fragmento {i + 1}: {response.text[:200]}...")
+                    cases_chunk = clean_json_response(response.text)
+                    if cases_chunk:
+                        # NORMALIZAR Y ASIGNAR IDs ÚNICOS
+                        for case in cases_chunk:
+                            # NORMALIZAR FORMATO DE PASOS (siempre array)
+                            if not isinstance(case.get('Pasos'), list):
+                                if isinstance(case.get('Pasos'), str):
+                                    # Convertir string numerado a array
+                                    steps = []
+                                    lines = case['Pasos'].split('\n')
+                                    for line in lines:
+                                        line = line.strip()
+                                        if line and any(char.isdigit() for char in line[:3]):
+                                            # Remover numeración si existe
+                                            step_text = re.sub(r'^\d+[\.\)]\s*', '', line)
+                                            if step_text:
+                                                steps.append(step_text)
+                                        elif line:
+                                            steps.append(line)
+                                    case['Pasos'] = steps if steps else ['Paso por definir']
+                                else:
+                                    case['Pasos'] = ['Paso por definir']
 
-                print(f"Respuesta del modelo (primeros 500 caracteres): {response.text[:500]}...")
-                cases_chunk = clean_json_response(response.text)
-                if cases_chunk and isinstance(cases_chunk, list):
-                    print(f"Fragmento {i + 1}: {len(cases_chunk)} casos generados")
-                    cases_chunk = [
-                        case for case in cases_chunk
-                        if case.get('Tipo_de_prueba', '').lower() in tipos_prueba
-                    ]
-                    print(f"Fragmento {i + 1}: {len(cases_chunk)} casos después de filtrar")
-                    for j, case in enumerate(cases_chunk):
-                        if not case.get('id_caso_prueba'):
-                            case['id_caso_prueba'] = f"TC{len(all_cases) + j + 1:03d}"
-                        case['historia_de_usuario'] = historia_chunk
-                        for field in ['titulo_caso_prueba', 'Descripcion', 'Precondiciones', 'Tipo_de_prueba', 'Pasos', 'Resultado_esperado']:
-                            if field not in case or not case[field]:
-                                case[field] = f"Campo {field} por definir"
-                        if not isinstance(case.get('Pasos'), list):
-                            case['Pasos'] = [str(case.get('Pasos', 'Paso por definir'))]
-                        if not isinstance(case.get('Resultado_esperado'), list):
-                            case['Resultado_esperado'] = [str(case.get('Resultado_esperado', 'Resultado por definir'))]
-                    all_cases.extend(cases_chunk)
+                            # NORMALIZAR FORMATO DE RESULTADOS (siempre array)
+                            if not isinstance(case.get('Resultado_esperado'), list):
+                                if isinstance(case.get('Resultado_esperado'), str):
+                                    # Convertir string a array (separar por puntos o saltos de línea)
+                                    results = []
+                                    lines = case['Resultado_esperado'].split('.')
+                                    for line in lines:
+                                        line = line.strip()
+                                        if line and not line.endswith('.'):
+                                            line += '.'
+                                        if line:
+                                            results.append(line)
+                                    case['Resultado_esperado'] = results if results else ['Resultado por definir']
+                                else:
+                                    case['Resultado_esperado'] = ['Resultado por definir']
+
+                            # Asegurar que la historia de usuario se asigne correctamente
+                            case['historia_de_usuario'] = historia_chunk
+
+                        all_cases.extend(cases_chunk)
+                    else:
+                        print(f"No se pudo procesar JSON del fragmento {i + 1}: {response.text[:500]}...")
                 else:
-                    print(f"No se pudo procesar JSON del fragmento {i + 1}: {response.text[:500]}...")
+                    print(f"Respuesta vacía del modelo para fragmento {i + 1}")
             except Exception as e:
                 print(f"Error procesando fragmento {i + 1}: {str(e)}")
-                print(f"Tipo de excepción: {type(e).__name__}")
-                import traceback
-                print(f"Traceback: {traceback.format_exc()}")
                 continue
+
+        # Deduplicar casos
+        all_cases = deduplicate_cases(all_cases)
+        all_cases = normalize_matrix_data(all_cases)
+        print(
+            f"Casos después de deduplicación: {len(all_cases)}")
 
         if not all_cases:
             return {
@@ -356,6 +524,53 @@ Responde ÚNICAMENTE con el array JSON de casos de prueba:"""
                 "message": f"Error en la lógica de procesamiento: {str(e)}"
             }
 
+def save_to_xlsx_buffer(data):
+    """Guarda los datos de la matriz en un buffer de memoria como XLSX."""
+    if not data:
+        return b""
+
+    # Campos en el orden deseado (igual que CSV)
+    fieldnames = [
+        "id_caso_prueba",
+        "titulo_caso_prueba",
+        "Descripcion",
+        "Precondiciones",
+        "Tipo_de_prueba",
+        "Nivel_de_prueba",
+        "Tipo_de_ejecucion",
+        "Pasos",
+        "Resultado_esperado",
+        "Categoria",
+        "Ambiente",
+        "Ciclo",
+        "issuetype",
+        "Prioridad",
+        "historia_de_usuario"
+    ]
+
+    # Crear DataFrame con pandas
+    df = pd.DataFrame(data)[fieldnames]  # Selecciona solo las columnas en orden
+
+    # Buffer para XLSX
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Matriz de Pruebas', index=False)
+        # Opcional: Auto-ajustar columnas para mejor legibilidad
+        worksheet = writer.sheets['Matriz de Pruebas']
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)  # Límite para no hacer columnas eternas
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+
+    output.seek(0)
+    return output.getvalue()
 
 def save_to_csv_buffer(data):
     """Guarda los datos de la matriz en un buffer de memoria como CSV."""
@@ -417,7 +632,7 @@ def save_to_json_buffer(data):
 
 def create_zip_with_matrix(data, output_filename):
     """
-    Crea un archivo ZIP con la matriz en formato CSV y JSON.
+    Crea un archivo ZIP con la matriz en formato CSV, JSON y XLSX.
     """
     if not data:
         return None
@@ -425,15 +640,21 @@ def create_zip_with_matrix(data, output_filename):
     zip_buffer = io.BytesIO()
 
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        # Agregar archivo CSV
+        # Agregar archivo CSV (igual que antes)
         csv_data = save_to_csv_buffer(data)
-        zip_file.writestr(f"{output_filename}_matriz.csv", csv_data)
+        zip_file.writestr(f"{output_filename}.csv", csv_data)
 
-        # Agregar archivo JSON
+        # Agregar archivo JSON (igual que antes)
         json_data = save_to_json_buffer(data)
-        zip_file.writestr(f"{output_filename}_matriz.json", json_data)
+        zip_file.writestr(f"{output_filename}.json", json_data)
 
-        # Agregar archivo README con información
+        # NUEVO: Agregar archivo XLSX
+        xlsx_data = save_to_xlsx_buffer(data)
+        zip_file.writestr(f"{output_filename}.xlsx", xlsx_data)
+
+        # Agregar archivo README actualizado con mención al XLSX
+        funcional_count = sum(1 for case in data if case.get('Tipo_de_prueba', '').lower() == 'funcional')
+        no_funcional_count = len(data) - funcional_count
         readme_content = f"""MATRIZ DE PRUEBAS GENERADA
 ============================
 
@@ -441,16 +662,17 @@ Archivo generado automáticamente por Matrix Generator
 Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 CONTENIDO DEL ZIP:
-- {output_filename}_matriz.csv: Matriz de pruebas en formato CSV
-- {output_filename}_matriz.json: Matriz de pruebas en formato JSON
+- {output_filename}.csv: Matriz de pruebas en formato CSV (texto plano, ideal para importaciones simples)
+- {output_filename}.json: Matriz de pruebas en formato JSON (para APIs e integraciones)
+- {output_filename}.xlsx: Matriz de pruebas en formato Excel (con hoja 'Matriz de Pruebas', columnas auto-ajustadas)
 - README.txt: Este archivo
 
 ESTADÍSTICAS:
 - Total de casos de prueba: {len(data)}
-- Casos funcionales: {sum(1 for case in data if case.get('Tipo_de_prueba', '').lower() == 'funcional')}
-- Casos no funcionales: {len(data) - sum(1 for case in data if case.get('Tipo_de_prueba', '').lower() == 'funcional')}
+- Casos funcionales: {funcional_count}
+- Casos no funcionales: {no_funcional_count}
 
-ESTRUCTURA DE CAMPOS CSV:
+ESTRUCTURA DE CAMPOS:
 - id_caso_prueba: Identificador único del caso
 - titulo_caso_prueba: Título descriptivo
 - Descripcion: Descripción detallada del caso
@@ -458,8 +680,8 @@ ESTRUCTURA DE CAMPOS CSV:
 - Tipo_de_prueba: Funcional o No Funcional
 - Nivel_de_prueba: Nivel de testing (UAT)
 - Tipo_de_ejecucion: Manual o Automático
-- Pasos: Pasos a seguir (separados por " | ")
-- Resultado_esperado: Resultados esperados (separados por " | ")
+- Pasos: Pasos a seguir (separados por " | " en CSV/XLSX)
+- Resultado_esperado: Resultados esperados (separados por " | " en CSV/XLSX)
 - Categoria: Categoría específica del tipo de prueba
 - Ambiente: Ambiente de pruebas (QA)
 - Ciclo: Ciclo de testing
@@ -468,9 +690,10 @@ ESTRUCTURA DE CAMPOS CSV:
 - historia_de_usuario: Referencia a la historia
 
 INSTRUCCIONES DE USO:
-1. Importa el archivo CSV en tu herramienta de gestión de casos de prueba
-2. Utiliza el archivo JSON para integraciones con APIs
-3. Revisa y ajusta los casos según tus necesidades específicas
+1. Abre el XLSX en Excel para ver/filtrar/editar fácilmente.
+2. Importa el CSV en herramientas como Jira, TestRail o Google Sheets.
+3. Usa el JSON para scripts automatizados.
+4. Revisa y ajusta los casos según tus necesidades específicas.
 """
         zip_file.writestr("README.txt", readme_content.encode('utf-8'))
 
@@ -593,7 +816,6 @@ def test_matrix_generation():
             print(f"  Tipo: {case.get('Tipo_de_prueba', 'N/A')}")
     else:
         print(f"Error: {result['message']}")
-
 
 if __name__ == "__main__":
     # Ejecutar prueba si se ejecuta directamente

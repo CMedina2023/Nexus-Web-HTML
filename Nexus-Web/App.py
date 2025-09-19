@@ -7,6 +7,9 @@ import matrix_backend
 from chat_backend import cargar_conocimiento, consultar_gemini
 import zipfile
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -51,8 +54,6 @@ except Exception as e:
     logger.error(f"Error cargando conocimiento JIRA: {e}")
     CONOCIMIENTO_JIRA = None
 
-
-
 # ============================================================================
 # MANEJO GLOBAL DE ERRORES PARA DEVOLVER JSON
 # ============================================================================
@@ -61,7 +62,6 @@ except Exception as e:
 def not_found_error(error):
     if request.path.startswith('/api/'):
         return jsonify({"error": "Endpoint no encontrado"}), 404
-    # ✅ Respuesta simple sin template
     return f"""
     <html>
         <head><title>404 - Página no encontrada</title></head>
@@ -77,7 +77,6 @@ def not_found_error(error):
 def internal_error(error):
     if request.path.startswith('/api/'):
         return jsonify({"error": "Error interno del servidor"}), 500
-    # ✅ Respuesta simple sin template
     return f"""
     <html>
         <head><title>500 - Error interno</title></head>
@@ -94,7 +93,6 @@ def handle_exception(e):
     logger.error(f"Error no manejado: {e}", exc_info=True)
     if request.path.startswith('/api/'):
         return jsonify({"error": "Error interno del servidor"}), 500
-    # ✅ Respuesta simple sin template
     return f"""
     <html>
         <head><title>Error</title></head>
@@ -105,7 +103,6 @@ def handle_exception(e):
         </body>
     </html>
     """, 500
-
 
 # ============================================================================
 # ENDPOINT DE HEALTH CHECK
@@ -150,7 +147,6 @@ def health_check():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 # ============================================================================
 # RUTAS PRINCIPALES
 # ============================================================================
@@ -171,16 +167,13 @@ def overview():
 def matrix_generator():
     return render_template('matrix-generator.html')
 
-
 @app.route('/chat')
 def chat_assistant():
     return render_template('chat.html')
 
-
 @app.route('/story-creator')
 def story_creator():
     return render_template('story-creator.html')
-
 
 # ============================================================================
 # API ENDPOINTS CON MANEJO DE ERRORES
@@ -189,7 +182,7 @@ def story_creator():
 @app.route('/api/matrix', methods=['POST'])
 def generate_matrix():
     try:
-        logger.info("Iniciando generación de matriz de pruebas")
+        logger.info("Iniciando generación de matriz")
 
         # Verificar archivo
         if 'file' not in request.files:
@@ -202,9 +195,9 @@ def generate_matrix():
         # Obtener parámetros del formulario, incluyendo el nuevo campo 'historia' y 'types'
         context = request.form.get('contexto', '')
         flow = request.form.get('flujo', '')
-        historia = request.form.get('historia', '') # AÑADIDO: Obtiene la historia de usuario
-        types = request.form.getlist('types') # AÑADIDO: Obtiene los tipos de prueba
-        if not types:  # Si types está vacío, usar funcional por defecto
+        historia = request.form.get('historia', '')
+        types = request.form.getlist('types')
+        if not types:
             types = ['funcional']
             logger.warning("No se especificaron tipos de prueba, usando 'funcional' por defecto")
         output_filename = request.form.get('output_filename', 'matriz_de_prueba')
@@ -214,7 +207,6 @@ def generate_matrix():
         logger.info(f"Flujo: {len(flow)} caracteres")
         logger.info(f"Historia de Usuario: {len(historia)} caracteres")
         logger.info(f"Tipos de prueba: {types}")
-
 
         # Guardar archivo temporal
         filename = secure_filename(file.filename)
@@ -229,7 +221,6 @@ def generate_matrix():
 
             # Generar matriz
             logger.info("Generando matriz de pruebas")
-            # CAMBIADO: Se pasan los nuevos argumentos 'historia' y 'types'
             result = matrix_backend.generar_matriz_test(context, flow, historia, text, types)
             logger.info(f"Resultado: {result['status']}")
 
@@ -279,7 +270,6 @@ def generate_matrix():
         logger.error(f"Error general en generate_matrix: {e}", exc_info=True)
         return jsonify({"error": f"Error interno: {str(e)}"}), 500
 
-
 @app.route('/api/chat', methods=['POST'])
 def get_chat_response():
     try:
@@ -302,11 +292,11 @@ def get_chat_response():
         logger.error(f"Error en chat: {e}", exc_info=True)
         return jsonify({"error": f"Error procesando la consulta: {str(e)}"}), 500
 
-
 @app.route('/api/story', methods=['POST'])
 def generate_and_download_story():
     try:
         logger.info("Iniciando generación de historias")
+        logger.info(f"Parámetros recibidos - Archivo: {request.files['file'].filename if 'file' in request.files else 'No file'}, Rol: {request.form.get('role', 'Usuario')}, Tipo: {request.form.get('story_type', 'funcionalidad')}, Contexto: {request.form.get('business_context', '')[:200]}...")
 
         if 'file' not in request.files:
             return jsonify({"error": "No se subió ningún archivo"}), 400
@@ -319,7 +309,7 @@ def generate_and_download_story():
         role = request.form.get('role', 'Usuario')
         story_type = request.form.get('story_type', 'funcionalidad')
         output_filename = request.form.get('output_filename', 'historias_generadas')
-        business_context = request.form.get('business_context', '')  # ✅ Ahora sí lo capturamos
+        business_context = request.form.get('business_context', '')
 
         logger.info(f"Archivo: {file.filename}, Rol: {role}, Tipo: {story_type}, Contexto: {len(business_context)} caracteres")
 
@@ -360,6 +350,11 @@ def generate_and_download_story():
             if os.path.exists(filepath):
                 os.remove(filepath)
 
+            # Validar número mínimo de historias
+            MIN_STORIES = 5
+            if len(stories) < MIN_STORIES:
+                logger.warning(f"Solo se generaron {len(stories)} historias, menos que el mínimo requerido ({MIN_STORIES})")
+
             # Crear documento Word
             logger.info("Creando documento Word")
             doc = story_backend.create_word_document(stories)
@@ -386,10 +381,11 @@ def generate_and_download_story():
         logger.error(f"Error general en generate_story: {e}", exc_info=True)
         return jsonify({"error": f"Error interno: {str(e)}"}), 500
 
-
 @app.route('/api/preview', methods=['POST'])
 def preview():
     try:
+        logger.info(f"Parámetros recibidos en preview - Archivo: {request.files['file'].filename if 'file' in request.files else 'No file'}, Rol: {request.form.get('role', 'Usuario')}, Tipo: {request.form.get('story_type', 'historia de usuario')}, Contexto: {request.form.get('business_context', '')[:200]}...")
+
         if 'file' not in request.files:
             return jsonify({"error": "No se subió ningún archivo"}), 400
 
@@ -399,7 +395,6 @@ def preview():
 
         role = request.form.get('role', 'Usuario')
         story_type = request.form.get('story_type', 'historia de usuario')
-        # CORRECTO: Se recupera el contexto adicional
         business_context = request.form.get('business_context', '')
 
         filename = secure_filename(file.filename)
@@ -431,7 +426,6 @@ def preview():
     except Exception as e:
         logger.error(f"Error general en preview: {e}", exc_info=True)
         return jsonify({"error": f"Error interno: {str(e)}"}), 500
-
 
 # ============================================================================
 # CONFIGURACIÓN PARA PRODUCCIÓN

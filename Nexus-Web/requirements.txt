@@ -9,3 +9,4 @@ google-api-core
 google-auth
 pandas
 openpyxl
+python-dotenv

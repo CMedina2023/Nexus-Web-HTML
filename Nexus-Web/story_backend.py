@@ -4,7 +4,6 @@ import docx
 from pypdf import PdfReader
 import re
 
-
 # -----------------------------
 # Funciones auxiliares
 # -----------------------------
@@ -22,7 +21,6 @@ def extract_text_from_file(file_path):
             return text
     else:
         raise ValueError("Formato de archivo no soportado. Usa .docx o .pdf.")
-
 
 def split_document_into_chunks(text, max_chunk_size=3000):
     """Divide el documento en chunks manejables."""
@@ -62,7 +60,6 @@ def split_document_into_chunks(text, max_chunk_size=3000):
 
     return chunks
 
-
 def create_analysis_prompt(document_text, role, business_context=None):
     """Crea un prompt inicial para análisis de funcionalidades."""
     context_section = ""
@@ -82,7 +79,7 @@ DOCUMENTO A ANALIZAR:
 {context_section}
 INSTRUCCIONES:
 1. Lee COMPLETAMENTE el documento
-2. Identifica TODAS las funcionalidades mencionadas
+2. Identifica TODAS las funcionalidades mencionadas (mínimo 10 funcionalidades, incluso si el documento es corto; si no hay suficientes, extrapola basándote en el contexto)
 3. Toma en cuenta el contexto adicional de negocio si se proporciona
 4. Crea una LISTA NUMERADA de funcionalidades EXCLUSIVAMENTE para el rol: {role}.
 5. Ignora cualquier funcionalidad que corresponda a otros roles diferentes a {role}.
@@ -98,13 +95,10 @@ Al final indica: "TOTAL FUNCIONALIDADES IDENTIFICADAS: [número]"
 NO generes historias de usuario todavía, solo la lista de funcionalidades.
 """
 
-
-def create_story_generation_prompt(functionalities_list, document_text, role, business_context, start_index,
-                                   batch_size=5):
+def create_story_generation_prompt(functionalities_list, document_text, role, business_context, start_index, batch_size=5):
     """Crea prompt para generar historias de usuario por lotes."""
     end_index = min(start_index + batch_size, len(functionalities_list))
     selected_functionalities = functionalities_list[start_index:end_index]
-
     func_text = "\n".join([f"{i + start_index + 1}. {func}" for i, func in enumerate(selected_functionalities)])
 
     context_section = ""
@@ -164,16 +158,17 @@ COMPLEJIDAD: [Simple/Moderada/Compleja]
 ```
 
 IMPORTANTE: 
+- Genera AL MENOS una historia por funcionalidad.
+- Si se proporciona contexto adicional, usa el contexto para ENRIQUECER las historias (por ejemplo, agregando escenarios adicionales o reglas de negocio).
+- ASEGÚRATE de que el número total de historias no sea menor que el generado sin contexto (mínimo {len(functionalities_list)} historias).
 - TODAS las historias deben generarse ÚNICAMENTE desde la perspectiva del rol **{role}**.
 - Integra el contexto adicional de negocio en las reglas de negocio y criterios de aceptación.
 - No inventes ni incluyas otros roles diferentes a {role}.
 - Numera consecutivamente desde {start_index + 1}.
 """
 
-
 def create_advanced_prompt(document_text, role, story_type, business_context=None):
     """Crea el prompt avanzado basado en el tipo de historia solicitada."""
-
     context_section = ""
     if business_context and business_context.strip():
         context_section = f"""
@@ -202,7 +197,7 @@ DOCUMENTO A ANALIZAR:
 INSTRUCCIONES CRÍTICAS:
 
 1. ANÁLISIS EXHAUSTIVO:
-   - Identifica TODAS las funcionalidades del documento
+   - Identifica TODAS las funcionalidades del documento (mínimo 10 funcionalidades, incluso si el documento es corto; extrapola si es necesario)
    - Incluye ÚNICAMENTE las que correspondan al rol que se proporciona en la UI {role}
    - Integra el contexto adicional de negocio en cada historia
 
@@ -212,7 +207,7 @@ FORMATO OBLIGATORIO:
 
 ```
 ╔════════════════════════════════════════════════════════════════════════════════
-HISTORIA #{{número}}: [Título]
+HISTORIA #{chr(123)}número{chr(125)}: [Título]
 ════════════════════════════════════════════════════════════════════════════════
 
 COMO: {role}
@@ -246,12 +241,13 @@ COMPLEJIDAD: [Simple/Moderada/Compleja]
 ════════════════════════════════════════════════════════════════════════════════
 ```
 
-EXPECTATIVA: Genera entre 10-50 historias según el contenido del documento.
+EXPECTATIVA: Genera entre 10-50 historias según el contenido del documento, asegurando que el contexto adicional incremente el detalle y no reduzca el número de historias.
 
 IMPORTANTE: 
 - Si el documento es extenso y sientes que podrías cortarte, termina la historia actual y agrega al final:
 "CONTINÚA EN EL SIGUIENTE LOTE - FUNCIONALIDADES PENDIENTES: [lista las que faltan]"
 - SIEMPRE integra el contexto adicional proporcionado en las historias generadas.
+- ASEGÚRATE de que el número total de historias no sea menor que el generado sin contexto (mínimo 10 historias).
 """
 
     elif story_type == 'característica':
@@ -267,7 +263,7 @@ FORMATO:
 
 ```
 ╔════════════════════════════════════════════════════════════════════════════════
-HISTORIA NO FUNCIONAL #{{número}}: [Título]
+HISTORIA NO FUNCIONAL #{chr(123)}número{chr(125)}: [Título]
 ════════════════════════════════════════════════════════════════════════════════
 
 COMO: {role}
@@ -287,6 +283,8 @@ PRIORIDAD: [Alta/Media/Baja]
 ════════════════════════════════════════════════════════════════════════════════
 ```
 
+EXPECTATIVA: Genera entre 10-50 historias según el contenido del documento, asegurando que el contexto adicional incremente el detalle y no reduzca el número de historias.
+
 IMPORTANTE: Integra el contexto adicional de negocio en los criterios y métricas.
 """
 
@@ -296,51 +294,46 @@ IMPORTANTE: Integra el contexto adicional de negocio en los criterios y métrica
 
     return prompt
 
-
 def process_large_document(document_text, role, story_type, business_context=None):
     """Procesa documentos grandes dividiéndolos en chunks."""
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
-
+        api_key = os.getenv("GOOGLE_API_KEY")
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
         print("📄 Documento grande detectado. Iniciando análisis por fases...")
-
-        # Debug para verificar parámetros
-        print(f"🔍 Debug - business_context recibido: {business_context}")
+        print(f"🔍 Debug - business_context recibido: {business_context[:200] if business_context else 'No proporcionado'}...")
         print(f"🔍 Debug - role: {role}")
         print(f"🔍 Debug - story_type: {story_type}")
 
         # Fase 1: Análisis de funcionalidades
         print("🔍 Fase 1: Identificando todas las funcionalidades...")
         analysis_prompt = create_analysis_prompt(document_text, role, business_context)
-
         analysis_response = model.generate_content(analysis_prompt, request_options={"timeout": 90})
 
         # Extraer lista de funcionalidades
-        functionalities = []
-        lines = analysis_response.text.split('\n')
-        for line in lines:
-            if re.match(r'^\d+\.', line.strip()):
-                functionalities.append(line.strip())
-
+        functionalities = [line.strip() for line in analysis_response.text.split('\n') if re.match(r'^\d+\.', line.strip())]
         print(f"✅ Identificadas {len(functionalities)} funcionalidades")
+
+        # Validar número mínimo de funcionalidades
+        MIN_FUNCTIONALITIES = 10
+        if len(functionalities) < MIN_FUNCTIONALITIES:
+            print(f"⚠️ Solo se identificaron {len(functionalities)} funcionalidades, intentando generar más...")
+            extra_prompt = analysis_prompt + f"\nINSTRUCCIÓN ADICIONAL: Genera al menos {MIN_FUNCTIONALITIES} funcionalidades, extrapolando si es necesario."
+            extra_response = model.generate_content(extra_prompt, request_options={"timeout": 90})
+            extra_functionalities = [line.strip() for line in extra_response.text.split('\n') if re.match(r'^\d+\.', line.strip())]
+            functionalities.extend(extra_functionalities[:MIN_FUNCTIONALITIES - len(functionalities)])
+            print(f"✅ Total funcionalidades tras reintento: {len(functionalities)}")
 
         # Fase 2: Generar historias por lotes
         all_stories = []
-        batch_size = 5  # Procesar 5 funcionalidades a la vez
+        batch_size = max(5, len(functionalities) // 2)  # Ajustar batch_size dinámicamente
         total_batches = (len(functionalities) + batch_size - 1) // batch_size
 
         for batch_num in range(total_batches):
             start_idx = batch_num * batch_size
-            print(
-                f"🔨 Generando lote {batch_num + 1}/{total_batches} (funcionalidades {start_idx + 1}-{min(start_idx + batch_size, len(functionalities))})")
-
-            story_prompt = create_story_generation_prompt(
-                functionalities, document_text, role, business_context, start_idx, batch_size
-            )
-
+            print(f"🔨 Generando lote {batch_num + 1}/{total_batches} (funcionalidades {start_idx + 1}-{min(start_idx + batch_size, len(functionalities))})")
+            story_prompt = create_story_generation_prompt(functionalities, document_text, role, business_context, start_idx, batch_size)
             try:
                 story_response = model.generate_content(story_prompt, request_options={"timeout": 120})
                 all_stories.append(story_response.text)
@@ -349,10 +342,20 @@ def process_large_document(document_text, role, story_type, business_context=Non
                 print(f"⚠️ Error en lote {batch_num + 1}: {e}")
                 continue
 
+        # Validar número mínimo de historias
+        MIN_STORIES = 5
+        story_count = sum(story.count("HISTORIA #") for story in all_stories)
+        if story_count < MIN_STORIES:
+            print(f"⚠️ Solo se generaron {story_count} historias, intentando generar más...")
+            extra_start_idx = len(functionalities)
+            extra_prompt = create_story_generation_prompt(functionalities, document_text, role, business_context, 0, MIN_STORIES - story_count)
+            extra_response = model.generate_content(extra_prompt, request_options={"timeout": 120})
+            all_stories.append(extra_response.text)
+            print(f"✅ Historias adicionales generadas")
+
         # Combinar todas las historias
         context_summary = ""
         if business_context and business_context.strip():
-            # Verificar que no sea la API key
             if not business_context.startswith("AIza"):
                 context_summary = f"""
 CONTEXTO ADICIONAL APLICADO:
@@ -400,15 +403,13 @@ RESUMEN FINAL
         print(f"❌ Error en procesamiento por chunks: {e}")
         return {"status": "error", "message": f"Error en procesamiento avanzado: {e}"}
 
-
 def generate_story_from_chunk(chunk, role, story_type, business_context=None):
     """
     Genera una historia de usuario a partir de un fragmento de texto usando la API de Gemini.
     Versión mejorada con prompts avanzados y contexto de negocio.
     """
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
-
+        api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             return {"status": "error", "message": "API Key no configurada."}
 
@@ -420,7 +421,6 @@ def generate_story_from_chunk(chunk, role, story_type, business_context=None):
 
         # Si el documento requiere procesamiento por chunks
         if prompt == "CHUNK_PROCESSING_NEEDED":
-            # Pasar los parámetros en el orden correcto
             return process_large_document(chunk, role, story_type, business_context)
 
         # Generar contenido con el prompt avanzado
@@ -438,7 +438,6 @@ def generate_story_from_chunk(chunk, role, story_type, business_context=None):
     except Exception as e:
         return {"status": "error", "message": f"Error en la generación: {e}"}
 
-
 def create_word_document(stories):
     """Crea un documento de Word en memoria con las historias generadas."""
     doc = docx.Document()
@@ -448,24 +447,17 @@ def create_word_document(stories):
 
     # Agregar cada historia
     for i, story in enumerate(stories, 1):
-        # Si la historia contiene el formato completo, mantenerlo
         if "HISTORIA #" in story or "═" in story:
-            # Agregar la historia completa tal como viene
             doc.add_paragraph(story)
         else:
-            # Si es una historia simple, agregar un formato básico
             doc.add_heading(f'Historia #{i}', level=2)
             doc.add_paragraph(story)
-
-        # Agregar separador entre historias
         doc.add_paragraph()
         doc.add_paragraph("─" * 50)
         doc.add_paragraph()
 
     return doc
 
-
-# Función de compatibilidad para mantener la API existente
 def generate_story_from_text(text, role, story_type, business_context=None):
     """
     Función wrapper para mantener compatibilidad con la API existente
@@ -483,20 +475,8 @@ def generate_story_from_text(text, role, story_type, business_context=None):
 
     return {"status": "success", "stories": stories}
 
-
-# Nueva función principal que incluye contexto de negocio
 def generate_stories_with_context(document_text, role, story_type, business_context=None):
     """
     Función principal para generar historias de usuario con contexto de negocio.
-
-    Args:
-        document_text (str): Contenido del documento a analizar
-        role (str): Rol del usuario (Usuario, Administrador, etc.)
-        story_type (str): Tipo de historias (funcionalidad, característica)
-        business_context (str, optional): Contexto adicional de negocio
-
-    Returns:
-        dict: Resultado de la generación con status y contenido
     """
     return generate_story_from_text(document_text, role, story_type, business_context)
-
